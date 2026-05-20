@@ -2,13 +2,9 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>MÔ PHỎNG THÍ NGHIỆM</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
-
+  <title>MÔ PHỎNG THÍ NGHIỆM – THPT Vĩnh Xuân</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,65 +12,62 @@
 <!-- HEADER -->
 <header>
   <div class="header-brand">
-    <div class="brand-text" style="color: rgb(255, 255, 255);">TRƯỜNG THPT VĨNH XUÂN </div>
-  </div>
-
-  <div class="header-actions">
-    <button class="btn-mail" id="openModal" title="Gửi phản hồi">
-      <div class="mail-icon"></div>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
     </button>
+    <div class="brand-logo">🔬</div>
+    <div class="brand-text">THPT VĨNH XUÂN</div>
+  </div>
+  <div class="header-center">ONLINE EXPERIMENT</div>
+  <div class="header-actions">
+    <button class="btn-mail" id="openModal" title="Gửi phản hồi">✉</button>
   </div>
 </header>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
 <!-- LAYOUT -->
 <div class="layout">
   <!-- SIDEBAR -->
-  <aside>
-    <div class="nav-item" onclick="showPage('home')" style="font-weight:700;color:#ffffff;background:#505050;border-left:3px solid #00b894";
-    > HOME
-</div>
+  <aside id="sidebar">
+    <div class="nav-home" onclick="showPage('home')">🏠 TRANG CHỦ</div>
+
     <!-- VẬT LÍ -->
     <div class="subject-group">
       <div class="subject-toggle physics-color" onclick="toggleSubject(this)">
-        <div class="subj-info">
-          <span class="subj-dot"></span> VẬT LÍ
-        </div>
-        <span class="arrow">▽</span>
+        <span class="subj-icon">⚡</span> VẬT LÍ
+        <span class="arrow">›</span>
       </div>
-
       <div class="subject-items">
-        <div class="nav-item" onclick="showPage('motion')">CHUYỂN ĐỘNG</div>
-        <div class="nav-item" onclick="showPage('wave')">SÓNG CƠ</div>
-        <div class="nav-item" onclick="showPage('optics')">SÓNG ÁNH SÁNG</div>
-        <div class="nav-item" onclick="showPage('circuit')">SƠ ĐỒ MẠCH ĐIỆN</div>
+        <div class="nav-item" onclick="showPage('motion')">🚗 Chuyển động</div>
+        <div class="nav-item" onclick="showPage('force')">💪 Lực (Kéo co)</div>
+        <div class="nav-item" onclick="showPage('wave')">〰 Sóng cơ</div>
+        <div class="nav-item" onclick="showPage('optics')">🌈 Sóng ánh sáng</div>
+        <div class="nav-item" onclick="showPage('circuit')">⚙ Mạch điện</div>
       </div>
     </div>
 
     <!-- HÓA HỌC -->
     <div class="subject-group">
       <div class="subject-toggle chem-color" onclick="toggleSubject(this)">
-        <div class="subj-info">
-          <span class="subj-dot"></span> HÓA HỌC
-        </div>
-        <span class="arrow">▽</span>
+        <span class="subj-icon">⚗</span> HÓA HỌC
+        <span class="arrow">›</span>
       </div>
-
       <div class="subject-items">
-        <div class="nav-item" onclick="showPage('acidbase')">ACID VÀ BASE</div>
+        <div class="nav-item" onclick="showPage('acidbase')">🧪 Acid và Base</div>
       </div>
     </div>
 
     <!-- SINH HỌC -->
     <div class="subject-group">
       <div class="subject-toggle bio-color" onclick="toggleSubject(this)">
-        <div class="subj-info">
-          <span class="subj-dot"></span> SINH HỌC
-        </div>
-        <span class="arrow">▽</span>
+        <span class="subj-icon">🌿</span> SINH HỌC
+        <span class="arrow">›</span>
       </div>
-
       <div class="subject-items">
-        <div class="nav-item" onclick="showPage('cell')">CẤU TẠO TẾ BÀO</div>
+        <div class="nav-item" onclick="showPage('cell')">🔬 Cấu tạo tế bào</div>
+        <div class="nav-item" onclick="showPage('dna')">🧬 Lắp ráp DNA</div>
       </div>
     </div>
   </aside>
@@ -85,112 +78,120 @@
     <!-- HOME PAGE -->
     <div class="page active" id="page-home">
       <div class="hero">
-       <!-- <h2>YOUR<br><em>LABORATORY</em></h2>-->
-       <h2 class="hero-box">
-        YOUR<br><span>LABORATORY</span>
-      </h2>
+        <div class="hero-badge">🔬 YOUR LABORATORY</div>
+        <h1 class="hero-title">Khám Phá<br><span>Khoa Học</span></h1>
+        <p class="hero-sub">Mô phỏng các thí nghiệm Vật lí, Hóa học và Sinh học ngay trên trình duyệt</p>
       </div>
 
+      <h2 class="section-title">⚡ Vật Lí</h2>
       <div class="cards-grid">
-        <div class="card" onclick="showPage('motion')">
-
+        <div class="card physics-card" onclick="showPage('motion')">
           <div class="card-icon">🚗</div>
-
-          <h3>CHUYỂN ĐỘNG</h3>
-
-          <span class="card-tag physics-color">Vật lí</span>
+          <h3>Chuyển Động</h3>
+          <p>Mô phỏng chuyển động thẳng đều và biến đổi đều</p>
         </div>
-
-        <div class="card" onclick="showPage('acidbase')">
-
-          <div class="card-icon">⚗</div>
-
-          <h3>ACID VÀ BASE</h3>
-
-          <span class="card-tag chem-color">Hóa học</span>
+        <div class="card physics-card" onclick="showPage('force')">
+          <div class="card-icon">💪</div>
+          <h3>Lực – Kéo Co</h3>
+          <p>Tương tác lực và cân bằng lực</p>
         </div>
+        <div class="card physics-card" onclick="showPage('wave')">
+          <div class="card-icon">〰</div>
+          <h3>Sóng Cơ</h3>
+          <p>Quan sát sóng ngang, sóng dọc và cộng hưởng</p>
+        </div>
+        <div class="card physics-card" onclick="showPage('optics')">
+          <div class="card-icon">🌈</div>
+          <h3>Sóng Ánh Sáng</h3>
+          <p>Khúc xạ, tán sắc và giao thoa ánh sáng</p>
+        </div>
+        <div class="card physics-card" onclick="showPage('circuit')">
+          <div class="card-icon">⚙</div>
+          <h3>Mạch Điện</h3>
+          <p>Lắp mạch với ampe kế, vôn kế, điện trở, đèn</p>
+        </div>
+      </div>
 
-        <div class="card" onclick="showPage('cell')">
+      <h2 class="section-title">⚗ Hóa Học</h2>
+      <div class="cards-grid">
+        <div class="card chem-card" onclick="showPage('acidbase')">
+          <div class="card-icon">🧪</div>
+          <h3>Acid và Base</h3>
+          <p>Kệ hóa chất, giấy quỳ tím, phản ứng acid–base</p>
+        </div>
+      </div>
 
+      <h2 class="section-title">🌿 Sinh Học</h2>
+      <div class="cards-grid">
+        <div class="card bio-card" onclick="showPage('cell')">
           <div class="card-icon">🔬</div>
-          
-          <h3>CẤU TẠO TẾ BÀO</h3>
-
-          <span class="card-tag bio-color">Sinh học</span>
+          <h3>Cấu Tạo Tế Bào</h3>
+          <p>Khám phá cấu trúc tế bào nhân thực và nhân sơ</p>
         </div>
-
+        <div class="card bio-card" onclick="showPage('dna')">
+          <div class="card-icon">🧬</div>
+          <h3>Lắp Ráp DNA</h3>
+          <p>Ghép cặp base nitơ và xây dựng chuỗi DNA</p>
+        </div>
       </div>
     </div>
 
-    <!-- VẬT LÍ: VẬN TỐC - QUÃNG ĐƯỜNG - THỜI GIAN -->
+    <!-- ==================== VẬT LÍ: CHUYỂN ĐỘNG ==================== -->
     <div class="page" id="page-motion">
-      <div class="exp-header">
+      <div class="page-header physics-header">
+        <span class="page-badge physics-badge">⚡ Vật Lí</span>
+        <h2>Chuyển Động Thẳng</h2>
       </div>
-
       <div class="sim-container">
         <div class="sim-toolbar">
-          <span>// CHUYỂN ĐỘNG THẲNG</span>
-          <button class="btn btn-primary" id="motion-btn" onclick="toggleMotion()">CHẠY</button>
-          <button class="btn btn-secondary" onclick="resetMotion()">LÀM MỚI</button>
+          <span class="sim-title">// CHUYỂN ĐỘNG THẲNG</span>
+          <button class="btn btn-physics" id="motion-btn" onclick="toggleMotion()">▶ CHẠY</button>
+          <button class="btn btn-secondary" onclick="resetMotion()">↺ LÀM MỚI</button>
         </div>
-        <div class="sim-canvas" style="flex-direction:column;gap:0;padding:0;background:#1b1b1b0e;min-height:380px">
-          <canvas id="motion-canvas" width="700" height="220" style="display:block;max-width:100%"></canvas>
-          <canvas id="graph-canvas" width="700" height="140" style="display:block;max-width:100%;border-top:1px solid #ffffff"></canvas>
+        <div class="sim-canvas" style="flex-direction:column;gap:0;padding:0;min-height:300px">
+          <canvas id="motion-canvas" width="700" height="200" style="display:block;max-width:100%"></canvas>
+          <canvas id="graph-canvas" width="700" height="120" style="display:block;max-width:100%;border-top:2px solid #e8f4fd"></canvas>
         </div>
         <div class="sim-controls">
           <div class="control-group">
             <label>Tính</label>
-            <select id="calc-target" onchange="updateInputFields()" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
-              <option value="s">s</option>
-              <option value="v">v</option>
-              <option value="t">t</option>
+            <select id="calc-target" onchange="updateInputFields()">
+              <option value="s">s (quãng đường)</option>
+              <option value="v">v (vận tốc)</option>
+              <option value="t">t (thời gian)</option>
             </select>
           </div>
           <div class="control-group" id="v0-group">
-            <label>v₀</label>
-            <input type="number" value="10" id="v0-input" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
+            <label>v₀ (m/s)</label>
+            <input type="number" value="10" id="v0-input">
           </div>
           <div class="control-group" id="a-group">
-            <label>a</label>
-            <input type="number" value="1" step="0.5" id="a-input" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
+            <label>a (m/s²)</label>
+            <input type="number" value="1" step="0.5" id="a-input">
           </div>
           <div class="control-group" id="t-group">
-            <label>t</label>
-            <input type="number" value="5" id="t-input" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
+            <label>t (s)</label>
+            <input type="number" value="5" id="t-input">
           </div>
           <div class="control-group" id="v-group" style="display:none">
-            <label>v</label>
-            <input type="number" value="20" id="v-input" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
+            <label>v (m/s)</label>
+            <input type="number" value="20" id="v-input">
           </div>
           <div class="control-group" id="s-group" style="display:none">
-            <label>s</label>
-            <input type="number" value="50" id="s-input" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
+            <label>s (m)</label>
+            <input type="number" value="50" id="s-input">
           </div>
           <div class="control-group" style="grid-column:1/-1">
-            <button class="btn btn-primary" onclick="calcAndRun()" style="width:100%;padding:12px;font-size:14px">= Tính & Mô phỏng</button>
+            <button class="btn btn-physics" onclick="calcAndRun()" style="width:100%;padding:12px">= Tính & Mô phỏng</button>
           </div>
         </div>
       </div>
-
       <div class="data-panel">
-        <div class="data-cell">
-          <div class="dc-label">t</div>
-          <div class="dc-val" id="m-time">0.00<span class="dc-unit">s</span></div>
-        </div>
-        <div class="data-cell">
-          <div class="dc-label">v</div>
-          <div class="dc-val" id="m-vel">00.00<span class="dc-unit">m/s</span></div>
-        </div>
-        <div class="data-cell">
-          <div class="dc-label">s</div>
-          <div class="dc-val" id="m-dist">0.00<span class="dc-unit">m</span></div>
-        </div>
-        <div class="data-cell">
-          <div class="dc-label">a</div>
-          <div class="dc-val" id="m-acc">0.00<span class="dc-unit">m/s²</span></div>
-        </div>
+        <div class="data-cell"><div class="dc-label">t</div><div class="dc-val" id="m-time">0.00<span class="dc-unit">s</span></div></div>
+        <div class="data-cell"><div class="dc-label">v</div><div class="dc-val" id="m-vel">00.00<span class="dc-unit">m/s</span></div></div>
+        <div class="data-cell"><div class="dc-label">s</div><div class="dc-val" id="m-dist">0.00<span class="dc-unit">m</span></div></div>
+        <div class="data-cell"><div class="dc-label">a</div><div class="dc-val" id="m-acc">0.00<span class="dc-unit">m/s²</span></div></div>
       </div>
-
       <div class="info-grid">
         <div class="info-block">
           <h4>Công thức</h4>
@@ -204,149 +205,458 @@
         <div class="info-block">
           <h4>Nhận xét</h4>
           <ul>
-            <li>a = 0: chuyển động thẳng đều (v không đổi)</li>
-            <li>a &gt; 0: chuyển động nhanh dần đều</li>
-            <li>a &lt; 0: chuyển động chậm dần đều</li>
-            <li>v = 0: vật dừng lại (nếu a ngược chiều v₀)</li>
+            <li>a = 0: chuyển động thẳng đều</li>
+            <li>a &gt; 0: nhanh dần đều</li>
+            <li>a &lt; 0: chậm dần đều</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- HÓA HỌC: AXIT-BAZƠ -->
-    <div class="page" id="page-acidbase">
-      <div class="exp-header">
+    <!-- ==================== VẬT LÍ: LỰC ==================== -->
+    <div class="page" id="page-force">
+      <div class="page-header physics-header">
+        <span class="page-badge physics-badge">⚡ Vật Lí</span>
+        <h2>Lực – Kéo Co</h2>
       </div>
       <div class="sim-container">
         <div class="sim-toolbar">
-          <span>// PHẢN ỨNG ACID - BASE</span>
-          <button class="btn btn-primary" onclick="mixReaction()">TRỘN</button>
-          <button class="btn btn-secondary" onclick="resetChem()">LÀM MỚI</button>
+          <span class="sim-title">// KÉO CO – LỰC TỔNG HỢP</span>
+          <button class="btn btn-physics" id="force-btn" onclick="toggleForce()">▶ CHẠY</button>
+          <button class="btn btn-secondary" onclick="resetForce()">↺ LÀM MỚI</button>
         </div>
-        <div class="sim-canvas" style="background:#0a0f14">
-          <div class="beaker-wrap" id="beaker-wrap">
-            <div class="beaker" id="beaker-acid">
-              <div class="beaker-label">HCl (ACID)</div>
-              <div class="beaker-liquid" id="liq-acid" style="height:60%;background:#ff7675cc"></div>
-            </div>
-            <div style="padding-bottom:20px;color:#555;font-size:28px">+</div>
-            <div class="beaker" id="beaker-base">
-              <div class="beaker-label">NaOH (BASE)</div>
-              <div class="beaker-liquid" id="liq-base" style="height:60%;background:#74b9ffcc"></div>
-            </div>
-            <div class="reaction-arrow">→</div>
-            <div class="beaker" id="beaker-result">
-              <div class="beaker-label">Hỗn hợp</div>
-              <div class="beaker-liquid" id="liq-result" style="height:0%;background:#dfe6e9cc"></div>
-            </div>
+        <div class="sim-canvas" style="padding:0;background:#0d1b2a">
+          <canvas id="force-canvas" width="700" height="280" style="display:block;max-width:100%;width:100%"></canvas>
+        </div>
+        <div class="sim-controls" id="force-inputs" style="grid-template-columns:repeat(2,1fr)">
+          <div class="control-group">
+            <label>Lực Đội Trái F₁ (N)</label>
+            <input type="range" min="10" max="200" value="100" id="force-left" oninput="updateForceDisplay()">
+            <span class="val" id="fl-val">100 N</span>
           </div>
-          <div id="ph-display" style="position:absolute;right:24px;top:24px;text-align:center;display:none">
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;color:#555;text-transform:uppercase;margin-bottom:4px">pH</div>
-            <div style="font-family:'Space Mono',monospace;font-size:48px;font-weight:700;color:#00b894" id="ph-val">7.0</div>
+          <div class="control-group">
+            <label>Lực Đội Phải F₂ (N)</label>
+            <input type="range" min="10" max="200" value="100" id="force-right" oninput="updateForceDisplay()">
+            <span class="val" id="fr-val">100 N</span>
           </div>
+        </div>
+      </div>
+      <div class="data-panel">
+        <div class="data-cell"><div class="dc-label">F₁</div><div class="dc-val" id="fp-f1">100<span class="dc-unit">N</span></div></div>
+        <div class="data-cell"><div class="dc-label">F₂</div><div class="dc-val" id="fp-f2">100<span class="dc-unit">N</span></div></div>
+        <div class="data-cell"><div class="dc-label">Hợp Lực</div><div class="dc-val" id="fp-net">0<span class="dc-unit">N</span></div></div>
+        <div class="data-cell"><div class="dc-label">Kết quả</div><div class="dc-val" id="fp-result" style="font-size:14px">⇌ Cân bằng</div></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block">
+          <h4>Định luật Newton II</h4>
+          <ul>
+            <li>F = m·a</li>
+            <li>Hợp lực = F₂ – F₁</li>
+            <li>Nếu F_net = 0: cân bằng lực</li>
+          </ul>
+        </div>
+        <div class="info-block">
+          <h4>Nguyên lý</h4>
+          <ul>
+            <li>Vật chuyển động theo chiều hợp lực</li>
+            <li>Lực lớn hơn → thắng kéo co</li>
+            <li>F₁ = F₂ → cân bằng</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== VẬT LÍ: SÓNG CƠ ==================== -->
+    <div class="page" id="page-wave">
+      <div class="page-header physics-header">
+        <span class="page-badge physics-badge">⚡ Vật Lí</span>
+        <h2>Sóng Cơ Học</h2>
+      </div>
+      <div class="sim-container">
+        <div class="sim-toolbar">
+          <span class="sim-title">// SÓNG CƠ HỌC</span>
+          <button class="btn btn-physics" id="wave-btn" onclick="toggleWave()">▶ CHẠY</button>
+          <button class="btn btn-secondary" onclick="resetWave()">↺ LÀM MỚI</button>
+        </div>
+        <div class="sim-canvas" style="padding:0;background:#0d1b2a;flex-direction:column">
+          <canvas id="wave-canvas" width="700" height="300" style="display:block;max-width:100%;width:100%"></canvas>
         </div>
         <div class="sim-controls">
           <div class="control-group">
-            <label>Nồng độ HCl (mol/L) — (0.1–1.0)</label>
-            <input type="number" min="0.1" max="1.0" step="0.1" value="0.5" id="acid-conc" oninput="document.getElementById('acid-conc-val').textContent=parseFloat(this.value).toFixed(1)+' M'" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
-            <span class="val" id="acid-conc-val">0.5 M</span>
+            <label>Loại sóng</label>
+            <select id="wave-type" onchange="resetWave()">
+              <option value="transverse">Sóng ngang</option>
+              <option value="longitudinal">Sóng dọc</option>
+              <option value="standing">Sóng dừng</option>
+            </select>
           </div>
           <div class="control-group">
-            <label>Nồng độ NaOH (mol/L) — (0.1–1.0)</label>
-            <input type="number" min="0.1" max="1.0" step="0.1" value="0.5" id="base-conc" oninput="document.getElementById('base-conc-val').textContent=parseFloat(this.value).toFixed(1)+' M'" style="width:100%;padding:8px 12px;border:2px solid #444;background:#1a1a1a;color:#fff;font-size:15px;outline:none">
-            <span class="val" id="base-conc-val">0.5 M</span>
+            <label>Biên độ (A)</label>
+            <input type="range" min="10" max="60" value="30" id="wave-amp" oninput="document.getElementById('wave-amp-val').textContent=this.value">
+            <span class="val" id="wave-amp-val">30</span>
+          </div>
+          <div class="control-group">
+            <label>Tần số (Hz)</label>
+            <input type="range" min="1" max="5" value="2" step="0.5" id="wave-freq" oninput="document.getElementById('wave-freq-val').textContent=this.value">
+            <span class="val" id="wave-freq-val">2</span>
+          </div>
+          <div class="control-group">
+            <label>Tốc độ truyền</label>
+            <input type="range" min="1" max="5" value="3" id="wave-speed" oninput="document.getElementById('wave-speed-val').textContent=this.value">
+            <span class="val" id="wave-speed-val">3</span>
+          </div>
+        </div>
+      </div>
+      <div class="data-panel">
+        <div class="data-cell"><div class="dc-label">Biên độ A</div><div class="dc-val" id="wave-A-display">30<span class="dc-unit">px</span></div></div>
+        <div class="data-cell"><div class="dc-label">Tần số f</div><div class="dc-val" id="wave-f-display">2<span class="dc-unit">Hz</span></div></div>
+        <div class="data-cell"><div class="dc-label">Chu kỳ T</div><div class="dc-val" id="wave-T-display">0.5<span class="dc-unit">s</span></div></div>
+        <div class="data-cell"><div class="dc-label">Bước sóng λ</div><div class="dc-val" id="wave-L-display">–<span class="dc-unit">m</span></div></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block">
+          <h4>Công thức sóng cơ</h4>
+          <ul>
+            <li>T = 1/f (chu kỳ)</li>
+            <li>λ = v/f (bước sóng)</li>
+            <li>y = A·sin(2πft – 2πx/λ)</li>
+          </ul>
+        </div>
+        <div class="info-block">
+          <h4>Loại sóng cơ</h4>
+          <ul>
+            <li>Sóng ngang: dao động ⊥ truyền sóng</li>
+            <li>Sóng dọc: dao động ∥ truyền sóng</li>
+            <li>Sóng dừng: giao thoa hai sóng ngược chiều</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== VẬT LÍ: SÓNG ÁNH SÁNG ==================== -->
+    <div class="page" id="page-optics">
+      <div class="page-header physics-header">
+        <span class="page-badge physics-badge">⚡ Vật Lí</span>
+        <h2>Sóng Ánh Sáng</h2>
+      </div>
+      <div class="sim-container">
+        <div class="sim-toolbar">
+          <span class="sim-title">// QUANG HỌC – ÁNH SÁNG</span>
+          <button class="btn btn-physics" onclick="runOptics()">▶ CHẠY</button>
+          <button class="btn btn-secondary" onclick="resetOptics()">↺ LÀM MỚI</button>
+        </div>
+        <div class="sim-canvas" style="padding:0;background:#030712;flex-direction:column">
+          <canvas id="optics-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%"></canvas>
+        </div>
+        <div class="sim-controls">
+          <div class="control-group">
+            <label>Hiện tượng</label>
+            <select id="optics-mode" onchange="runOptics()">
+              <option value="dispersion">Tán sắc ánh sáng (lăng kính)</option>
+              <option value="refraction">Khúc xạ ánh sáng</option>
+              <option value="interference">Giao thoa ánh sáng</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Góc tới (°)</label>
+            <input type="range" min="10" max="70" value="40" id="optics-angle" oninput="runOptics();document.getElementById('optics-angle-val').textContent=this.value+'°'">
+            <span class="val" id="optics-angle-val">40°</span>
+          </div>
+          <div class="control-group">
+            <label>Chiết suất n₂</label>
+            <input type="range" min="1.0" max="2.5" step="0.05" value="1.5" id="optics-n" oninput="runOptics();document.getElementById('optics-n-val').textContent=parseFloat(this.value).toFixed(2)">
+            <span class="val" id="optics-n-val">1.50</span>
+          </div>
+        </div>
+      </div>
+      <div class="data-panel">
+        <div class="data-cell"><div class="dc-label">Góc tới i</div><div class="dc-val" id="opt-i">40<span class="dc-unit">°</span></div></div>
+        <div class="data-cell"><div class="dc-label">Góc khúc xạ r</div><div class="dc-val" id="opt-r">–<span class="dc-unit">°</span></div></div>
+        <div class="data-cell"><div class="dc-label">n₂/n₁</div><div class="dc-val" id="opt-n">1.50</div></div>
+        <div class="data-cell"><div class="dc-label">Hiện tượng</div><div class="dc-val" id="opt-desc" style="font-size:12px">Tán sắc</div></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block">
+          <h4>Định luật Snell</h4>
+          <ul>
+            <li>n₁·sin(i) = n₂·sin(r)</li>
+            <li>n₁ < n₂: ánh sáng lệch về pháp tuyến</li>
+            <li>n_không khí ≈ 1.0</li>
+            <li>n_kính ≈ 1.5; n_nước ≈ 1.33</li>
+          </ul>
+        </div>
+        <div class="info-block">
+          <h4>Tán sắc & Giao thoa</h4>
+          <ul>
+            <li>Lăng kính tách trắng → 7 màu quang phổ</li>
+            <li>Giao thoa: vân sáng khi δ = kλ</li>
+            <li>Vân tối khi δ = (k+½)λ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== VẬT LÍ: MẠCH ĐIỆN ==================== -->
+    <div class="page" id="page-circuit">
+      <div class="page-header physics-header">
+        <span class="page-badge physics-badge">⚡ Vật Lí</span>
+        <h2>Thực Hành Lắp Mạch Điện</h2>
+      </div>
+      <div class="sim-container">
+        <div class="sim-toolbar">
+          <span class="sim-title">// MẠCH ĐIỆN – THỰC HÀNH</span>
+          <button class="btn btn-physics" onclick="runCircuit()">⚡ ĐÓNG MẠCH</button>
+          <button class="btn btn-secondary" onclick="resetCircuit()">↺ LÀM MỚI</button>
+        </div>
+        <div class="sim-canvas" style="padding:0;background:#0d1117;min-height:320px">
+          <canvas id="circuit-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%"></canvas>
+        </div>
+        <div class="sim-controls">
+          <div class="control-group">
+            <label>Sơ đồ mạch</label>
+            <select id="circuit-type" onchange="resetCircuit()">
+              <option value="series">Nối tiếp (R₁–R₂–Đèn)</option>
+              <option value="parallel">Song song (R₁ ∥ R₂)</option>
+              <option value="mixed">Hỗn hợp</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Nguồn điện E (V)</label>
+            <input type="range" min="1" max="24" value="12" id="circuit-emf" oninput="document.getElementById('circuit-emf-val').textContent=this.value+'V'">
+            <span class="val" id="circuit-emf-val">12V</span>
+          </div>
+          <div class="control-group">
+            <label>Điện trở R₁ (Ω)</label>
+            <input type="range" min="1" max="50" value="10" id="circuit-r1" oninput="document.getElementById('circuit-r1-val').textContent=this.value+'Ω'">
+            <span class="val" id="circuit-r1-val">10Ω</span>
+          </div>
+          <div class="control-group">
+            <label>Điện trở R₂ (Ω)</label>
+            <input type="range" min="1" max="50" value="10" id="circuit-r2" oninput="document.getElementById('circuit-r2-val').textContent=this.value+'Ω'">
+            <span class="val" id="circuit-r2-val">10Ω</span>
+          </div>
+          <div class="control-group">
+            <label>Đèn (Ω)</label>
+            <input type="range" min="1" max="50" value="5" id="circuit-lamp" oninput="document.getElementById('circuit-lamp-val').textContent=this.value+'Ω'">
+            <span class="val" id="circuit-lamp-val">5Ω</span>
+          </div>
+          <div class="control-group">
+            <label>Khóa K</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-physics" onclick="setSwitch(true)" id="sw-close-btn">Đóng K</button>
+              <button class="btn btn-secondary" onclick="setSwitch(false)" id="sw-open-btn">Mở K</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="data-panel">
+        <div class="data-cell"><div class="dc-label">Ampe kế (A)</div><div class="dc-val" id="circ-A">–<span class="dc-unit">A</span></div></div>
+        <div class="data-cell"><div class="dc-label">Vôn kế (V)</div><div class="dc-val" id="circ-V">–<span class="dc-unit">V</span></div></div>
+        <div class="data-cell"><div class="dc-label">R tổng</div><div class="dc-val" id="circ-Rtotal">–<span class="dc-unit">Ω</span></div></div>
+        <div class="data-cell"><div class="dc-label">Công suất</div><div class="dc-val" id="circ-P">–<span class="dc-unit">W</span></div></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block">
+          <h4>Định luật Ohm</h4>
+          <ul>
+            <li>U = I·R</li>
+            <li>Nối tiếp: R = R₁ + R₂ + ...</li>
+            <li>Song song: 1/R = 1/R₁ + 1/R₂</li>
+          </ul>
+        </div>
+        <div class="info-block">
+          <h4>Dụng cụ đo</h4>
+          <ul>
+            <li>Ampe kế: đo cường độ dòng điện (A)</li>
+            <li>Vôn kế: đo hiệu điện thế (V)</li>
+            <li>Khóa K: đóng/mở mạch điện</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== HÓA HỌC: ACID VÀ BASE ==================== -->
+    <div class="page" id="page-acidbase">
+      <div class="page-header chem-header">
+        <span class="page-badge chem-badge">⚗ Hóa Học</span>
+        <h2>Acid và Base – Kệ Hóa Chất</h2>
+      </div>
+      <div class="sim-container">
+        <div class="sim-toolbar">
+          <span class="sim-title">// KỆ HÓA CHẤT – THÍ NGHIỆM</span>
+          <button class="btn btn-chem" onclick="mixChemicals()">⚗ PHẢN ỨNG</button>
+          <button class="btn btn-secondary" onclick="resetChem()">↺ LÀM MỚI</button>
+        </div>
+
+        <!-- Kệ hóa chất -->
+        <div class="chem-shelf">
+          <div class="shelf-label">📦 Kệ hóa chất – Chọn 2 chất để phản ứng:</div>
+          <div class="shelf-row" id="shelf-row"></div>
+          <div class="shelf-selected" id="shelf-selected">
+            <div class="selected-slot" id="slot-A" onclick="clearSlot('A')">
+              <span class="slot-label">Chất A</span>
+              <span class="slot-name" id="slot-A-name">— chưa chọn —</span>
+            </div>
+            <div class="plus-sign">+</div>
+            <div class="selected-slot" id="slot-B" onclick="clearSlot('B')">
+              <span class="slot-label">Chất B</span>
+              <span class="slot-name" id="slot-B-name">— chưa chọn —</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Giấy quỳ tím -->
+        <div class="litmus-section">
+          <div class="litmus-label">🌸 Thử với giấy quỳ tím:</div>
+          <div class="litmus-display" id="litmus-display">
+            <div class="litmus-paper" id="litmus-paper">
+              <span id="litmus-text">Quỳ tím</span>
+            </div>
+            <div class="litmus-result" id="litmus-result">Chưa thử</div>
+          </div>
+        </div>
+
+        <!-- Beaker phản ứng -->
+        <div class="beaker-section">
+          <div class="beaker-wrap" id="beaker-wrap">
+            <div class="beaker" id="beaker-acid">
+              <div class="beaker-label" id="beaker-A-label">Chất A</div>
+              <div class="beaker-liquid" id="liq-acid" style="height:60%"></div>
+            </div>
+            <div class="plus-sign2">+</div>
+            <div class="beaker" id="beaker-base">
+              <div class="beaker-label" id="beaker-B-label">Chất B</div>
+              <div class="beaker-liquid" id="liq-base" style="height:60%"></div>
+            </div>
+            <div class="reaction-arrow">→</div>
+            <div class="beaker" id="beaker-result">
+              <div class="beaker-label">Sản phẩm</div>
+              <div class="beaker-liquid" id="liq-result" style="height:0%"></div>
+            </div>
+            <div id="ph-display" style="display:none;text-align:center;align-self:center;min-width:80px">
+              <div style="font-size:11px;color:#888;margin-bottom:4px">pH</div>
+              <div style="font-size:36px;font-weight:800;color:#00b894" id="ph-val">7.0</div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="data-panel">
-        <div class="data-cell">
-          <div class="dc-label">pH hiện tại</div>
-          <div class="dc-val" id="chem-ph-val">–</div>
-        </div>
-        <div class="data-cell">
-          <div class="dc-label">Môi trường</div>
-          <div class="dc-val" id="chem-env" style="font-size:16px"></div>
-        </div>
-        <div class="data-cell">
-          <div class="dc-label">Sản phẩm</div>
-          <div class="dc-val" style="font-size:14px">NaCl + H₂O</div>
-        </div>
+        <div class="data-cell"><div class="dc-label">Chất A</div><div class="dc-val" id="chem-A" style="font-size:13px">–</div></div>
+        <div class="data-cell"><div class="dc-label">Chất B</div><div class="dc-val" id="chem-B" style="font-size:13px">–</div></div>
+        <div class="data-cell"><div class="dc-label">pH</div><div class="dc-val" id="chem-ph-val">–</div></div>
+        <div class="data-cell"><div class="dc-label">Môi trường</div><div class="dc-val" id="chem-env" style="font-size:12px">–</div></div>
+      </div>
+
+      <div class="reaction-equation" id="reaction-equation" style="display:none">
+        <h4>⚗ Phương trình phản ứng:</h4>
+        <div id="reaction-text" class="equation-text"></div>
+        <div id="reaction-note" class="equation-note"></div>
       </div>
 
       <div class="info-grid">
         <div class="info-block">
-          <h4>Phương trình phản ứng</h4>
+          <h4>Giấy quỳ tím</h4>
           <ul>
-            <li>HCl + NaOH → NaCl + H₂O</li>
-            <li>H⁺ + OH⁻ → H₂O (ion rút gọn)</li>
-            <li>pH = 7 khi trung hòa hoàn toàn</li>
+            <li>Acid → quỳ hóa đỏ (pH &lt; 7)</li>
+            <li>Base → quỳ hóa xanh (pH &gt; 7)</li>
+            <li>Trung tính → quỳ không đổi màu</li>
+            <li>Dùng để nhận biết nhanh acid/base</li>
           </ul>
         </div>
         <div class="info-block">
-          <h4>Thang pH</h4>
+          <h4>pH và môi trường</h4>
           <ul>
-            <li>pH &lt; 7: Môi trường axit</li>
-            <li>pH = 7: Môi trường trung tính</li>
-            <li>pH &gt; 7: Môi trường kiềm</li>
-            <li>Chỉ thị phenolphthalein: không màu → hồng</li>
+            <li>pH &lt; 7: Môi trường acid</li>
+            <li>pH = 7: Trung tính</li>
+            <li>pH &gt; 7: Môi trường base (kiềm)</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <!-- SINH HỌC: TẾ BÀO -->
-    <!--<div class="page" id="page-cell">
-      <div class="exp-header">
-        
+    <!-- ==================== SINH HỌC: TẾ BÀO ==================== -->
+    <div class="page" id="page-cell">
+      <div class="coming-soon-page">
+        <div class="cs-icon">🔬</div>
+        <h1>COMING SOON</h1>
+        <div class="cs-line bio"></div>
+        <p>Mô phỏng cấu tạo tế bào đang được phát triển!</p>
+        <span class="cs-badge bio-badge">Cấu tạo tế bào · Sinh học</span>
+      </div>
+    </div>
+
+    <!-- ==================== SINH HỌC: DNA ==================== -->
+    <div class="page" id="page-dna">
+      <div class="page-header bio-header">
+        <span class="page-badge bio-badge">🌿 Sinh Học</span>
+        <h2>Lắp Ráp Chuỗi DNA</h2>
       </div>
       <div class="sim-container">
         <div class="sim-toolbar">
-          <span>// TẾ BÀO</span>
-          <button class="btn btn-success" onclick="setCellType('animal')" id="btn-animal">ĐỘNG VẬT</button>
-          <button class="btn btn-secondary" onclick="setCellType('plant')" id="btn-plant">THỰC VẬT</button>
+          <span class="sim-title">// LẮP RÁP DNA – CẶP BASE NITƠ</span>
+          <button class="btn btn-bio" onclick="checkDNA()">✓ KIỂM TRA</button>
+          <button class="btn btn-secondary" onclick="resetDNA()">↺ LÀM MỚI</button>
         </div>
-        <div class="sim-canvas" style="background:#050a0f;min-height:420px">
-          <canvas id="cell-canvas" width="700" height="400" style="display:block;max-width:100%;cursor:crosshair"></canvas>
+
+        <div class="dna-workspace">
+          <!-- Hộp base -->
+          <div class="dna-bases-box">
+            <div class="dna-box-label">🧬 Hộp base nitơ – Kéo vào chuỗi:</div>
+            <div class="bases-palette" id="bases-palette">
+              <div class="base-chip base-A" draggable="true" ondragstart="dragBase(event,'A')">A</div>
+              <div class="base-chip base-T" draggable="true" ondragstart="dragBase(event,'T')">T</div>
+              <div class="base-chip base-G" draggable="true" ondragstart="dragBase(event,'G')">G</div>
+              <div class="base-chip base-C" draggable="true" ondragstart="dragBase(event,'C')">C</div>
+            </div>
+          </div>
+
+          <!-- Chuỗi DNA -->
+          <div class="dna-strands" id="dna-strands">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Nút click để chọn base -->
+          <div class="dna-click-section">
+            <div class="dna-click-label">Hoặc nhấn vào ô trống để chọn base:</div>
+          </div>
         </div>
-      </div>
-      <div id="cell-info" style="margin-top:12px;padding:16px;border:2px solid var(--border);background:var(--surface);font-size:14px;min-height:52px;display:flex;align-items:center;gap:10px">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase">Di chuột vào bào quan để xem thông tin</span>
+
+        <div class="dna-legend">
+          <div class="legend-item"><span class="base-chip base-A sm">A</span> Adenine – cặp với T</div>
+          <div class="legend-item"><span class="base-chip base-T sm">T</span> Thymine – cặp với A</div>
+          <div class="legend-item"><span class="base-chip base-G sm">G</span> Guanine – cặp với C</div>
+          <div class="legend-item"><span class="base-chip base-C sm">C</span> Cytosine – cặp với G</div>
+        </div>
+
+        <div class="dna-score" id="dna-score"></div>
       </div>
 
       <div class="info-grid">
         <div class="info-block">
-          <h4>Bào quan tế bào động vật</h4>
+          <h4>Nguyên tắc bổ sung</h4>
           <ul>
-            <li>Nhân tế bào: chứa DNA, điều khiển mọi hoạt động</li>
-            <li>Ti thể: sản xuất năng lượng (ATP)</li>
-            <li>Ribosome: tổng hợp protein</li>
-            <li>Lưới nội chất: vận chuyển chất</li>
+            <li>A luôn cặp với T (2 liên kết H)</li>
+            <li>G luôn cặp với C (3 liên kết H)</li>
+            <li>Hai chuỗi song song ngược chiều</li>
+            <li>Cấu trúc xoắn kép (double helix)</li>
           </ul>
         </div>
         <div class="info-block">
-          <h4>Đặc điểm tế bào thực vật</h4>
+          <h4>Cấu trúc DNA</h4>
           <ul>
-            <li>Thành tế bào cellulose: bảo vệ và tạo hình dạng</li>
-            <li>Lục lạp: thực hiện quang hợp</li>
-            <li>Không bào trung tâm: dự trữ chất</li>
-            <li>Không có trung thể (centriole)</li>
+            <li>DNA gồm 4 loại nucleotide</li>
+            <li>Đường – phosphate – base</li>
+            <li>Watson & Crick, 1953</li>
+            <li>Mang thông tin di truyền</li>
           </ul>
         </div>
       </div>
     </div>
 
-  Các trang placeholder -->
-    <!-- SINH HỌC: TẾ BÀO -->
-  <div class="page" id="page-cell">
-  <div style="display:flex;justify-content:center;align-items:center;height:60vh;flex-direction:column;color:#888;">
-    <h1 style="font-size:48px;letter-spacing:2px;">COMING SOON</h1>
-    <p style="margin-top:10px;font-size:16px;">Chức năng đang được phát triển...</p>
-  </div>
-</div>
   </main>
-</div> 
-
+</div>
 
 <!-- STATUS BAR -->
 <div class="statusbar">
@@ -354,36 +664,51 @@
   <span>|</span>
   <span id="status-page">TRANG CHỦ</span>
   <span>|</span>
-  <span>THPT Vĩnh Xuân – ONLINE EXPERIMENT </span>
+  <span>THPT Vĩnh Xuân – ONLINE EXPERIMENT</span>
 </div>
 
 <!-- FEEDBACK MODAL -->
 <div class="modal-overlay" id="feedbackModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📬 Gửi ý kiến phản hồi</h3>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+  <form action="https://docs.google.com/forms/d/e/1FAIpQLSfHP5RRqm_vSa1Vv-VrfyPkGx4UfMlJZz5BZPM5elPQpIYdtA/formResponse" method="POST" target="hidden_iframe" id="feedbackForm" style="margin:0;padding:0">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📬 Gửi ý kiến phản hồi</h3>
+        <button type="button" class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-form-body">
+        <label>Họ và tên</label>
+        <input type="text" name="entry.1079995345" id="fb-name" placeholder="Tên của bạn...">
+        <label>Nội dung</label>
+        <textarea name="entry.2005914619" id="fb-content" placeholder="Nhập nội dung phản hồi..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('feedbackForm').reset();closeModal()">Hủy</button>
+        <button type="submit" class="btn-send">Gửi phản hồi →</button>
+      </div>
+      <div class="success-msg" id="success-msg">
+        <div class="check">✅</div>
+        <div>Cảm ơn bạn đã gửi phản hồi!<br>Chúng tôi sẽ xem xét và cải thiện sớm nhất.</div>
+      </div>
     </div>
-    <div class="modal-body" id="modal-form-body">
-      <label>Họ và tên</label>
-      <input type="text" id="fb-name" placeholder="Tên của bạn là gì...">
-      
-      <label>Nội dung</label>
-      <textarea id="fb-content" placeholder="Nhập nội dung"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" style="color:#888" onclick="closeModal()">Hủy</button>
-      <button class="btn-dark" onclick="submitFeedback()">Gửi phản hồi →</button>
-    </div>
-    <div class="success-msg" id="success-msg">
-      <div class="check">✅</div>
-      <div>Cảm ơn bạn đã gửi phản hồi!<br>Chúng tôi sẽ xem xét và cải thiện sớm nhất.</div>
-    </div>
-  </div>
+  </form>
 </div>
+<iframe name="hidden_iframe" id="hidden_iframe" style="display:none" onload="handleFormResponse()"></iframe>
 
-
+<script>
+  let isSubmitting = false;
+  document.getElementById('feedbackForm').onsubmit = function() { isSubmitting = true; };
+  function handleFormResponse() {
+    if (isSubmitting) {
+      const successMsg = document.getElementById('success-msg');
+      if (successMsg) successMsg.style.display = 'flex';
+      document.getElementById('feedbackForm').reset();
+      setTimeout(() => {
+        if (successMsg) successMsg.style.display = 'none';
+        closeModal(); isSubmitting = false;
+      }, 2500);
+    }
+  }
+</script>
 <script src="script.js"></script>
-
 </body>
 </html>
