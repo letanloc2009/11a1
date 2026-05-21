@@ -45,6 +45,9 @@
         <div class="nav-item" onclick="showPage('wave')">〰 Sóng cơ</div>
         <div class="nav-item" onclick="showPage('optics')">🌈 Sóng ánh sáng</div>
         <div class="nav-item" onclick="showPage('circuit')">⚙ Mạch điện</div>
+		<div class="nav-item" onclick="showPage('young')">🌈 Giao thoa Young</div>
+		<div class="nav-item" onclick="showPage('energy')">⚡ Năng lượng</div>
+		<div class="nav-item" onclick="showPage('torque')">🔄 Moment lực</div>
       </div>
     </div>
 
@@ -358,10 +361,9 @@
           <div class="control-group">
             <label>Hiện tượng</label>
             <select id="optics-mode" onchange="runOptics()">
-              <option value="dispersion">Tán sắc ánh sáng (lăng kính)</option>
-              <option value="refraction">Khúc xạ ánh sáng</option>
-              <option value="interference">Giao thoa ánh sáng</option>
-            </select>
+				<option value="dispersion">Tán sắc ánh sáng (lăng kính)</option>
+				<option value="refraction">Khúc xạ ánh sáng</option>
+			</select>
           </div>
           <div class="control-group">
             <label>Góc tới (°)</label>
@@ -401,6 +403,106 @@
         </div>
       </div>
     </div>
+
+	<!-- GIAO THOA YOUNG -->
+<div class="page" id="page-young">
+  <div class="page-header physics-header">
+    <span class="page-badge physics-badge">⚡ Vật Lí</span>
+    <h2>Giao thoa ánh sáng – Thí nghiệm Young</h2>
+  </div>
+  <div class="sim-container">
+    <div class="sim-toolbar">
+      <span class="sim-title">// THÍ NGHIỆM KHE YOUNG</span>
+      <button class="btn btn-physics" onclick="runYoung()">✨ Cập nhật</button>
+      <button class="btn btn-secondary" onclick="resetYoung()">↺ Mặc định</button>
+    </div>
+    <div class="sim-canvas" style="padding:0; background:#030712;">
+      <canvas id="young-canvas" width="700" height="320" style="display:block;max-width:100%;"></canvas>
+    </div>
+    <div class="sim-controls">
+      <div class="control-group"><label>Bước sóng λ (nm)</label><input type="number" id="lambda" value="600" step="10" min="380" max="780" oninput="runYoung()"></div>
+      <div class="control-group"><label>Khoảng cách khe a (mm)</label><input type="number" id="a-slit" value="0.5" step="0.05" min="0.1" max="2" oninput="runYoung()"></div>
+      <div class="control-group"><label>Khoảng cách D (m)</label><input type="number" id="D-screen" value="1.5" step="0.1" min="0.5" max="5" oninput="runYoung()"></div>
+    </div>
+  </div>
+  <div class="data-panel">
+    <div class="data-cell"><div class="dc-label">Khoảng vân i</div><div class="dc-val" id="i-val">–<span class="dc-unit">mm</span></div></div>
+    <div class="data-cell"><div class="dc-label">Vân sáng trung tâm</div><div class="dc-val" id="center-val">bậc 0</div></div>
+    <div class="data-cell"><div class="dc-label">i = λD/a</div><div class="dc-val" style="font-size:14px;">công thức</div></div>
+    <div class="data-cell"><div class="dc-label">Hiện tượng</div><div class="dc-val" id="young-desc">Giao thoa ánh sáng</div></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-block"><h4>Công thức Young</h4><ul><li>i = λD / a</li><li>Vân sáng: x = k.i</li><li>Vân tối: x = (k+½)i</li><li>λ: bước sóng, D: khoảng cách, a: khoảng cách 2 khe</li></ul></div>
+    <div class="info-block"><h4>Điều kiện giao thoa</h4><ul><li>Hai sóng kết hợp (cùng tần số, hiệu pha không đổi)</li><li>Ánh sáng đơn sắc</li><li>Vân sáng: δ = kλ; Vân tối: δ = (k+½)λ</li></ul></div>
+  </div>
+</div>
+
+	<!-- NĂNG LƯỢNG -->
+<div class="page" id="page-energy">
+  <div class="page-header physics-header">
+    <span class="page-badge physics-badge">⚡ Vật Lí</span>
+    <h2>Cơ năng – Động năng – Thế năng (Con lắc lò xo)</h2>
+  </div>
+  <div class="sim-container">
+    <div class="sim-toolbar">
+      <span class="sim-title">// BẢO TOÀN CƠ NĂNG</span>
+      <button class="btn btn-physics" onclick="toggleEnergySim()">▶ Chạy</button>
+      <button class="btn btn-secondary" onclick="resetEnergy()">↺ Làm mới</button>
+    </div>
+    <div class="sim-canvas" style="padding:0; min-height:260px;">
+      <canvas id="energy-canvas" width="700" height="220" style="display:block;max-width:100%;background:#0d1b2a"></canvas>
+    </div>
+    <div class="sim-controls">
+      <div class="control-group"><label>Biên độ A (cm)</label><input type="number" id="A-energy" value="5" step="0.5" min="1" max="15" oninput="resetEnergy()"></div>
+      <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="m-energy" value="0.5" step="0.1" min="0.1" max="2" oninput="resetEnergy()"></div>
+      <div class="control-group"><label>Độ cứng k (N/m)</label><input type="number" id="k-energy" value="20" step="5" min="5" max="100" oninput="resetEnergy()"></div>
+    </div>
+  </div>
+  <div class="data-panel">
+    <div class="data-cell"><div class="dc-label">Động năng (J)</div><div class="dc-val" id="ke-val">0.00</div></div>
+    <div class="data-cell"><div class="dc-label">Thế năng (J)</div><div class="dc-val" id="pe-val">0.00</div></div>
+    <div class="data-cell"><div class="dc-label">Cơ năng (J)</div><div class="dc-val" id="me-val">0.00</div></div>
+    <div class="data-cell"><div class="dc-label">Li độ x (cm)</div><div class="dc-val" id="x-val">0.00</div></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-block"><h4>Công thức</h4><ul><li>Wđ = ½mv²</li><li>Wt = ½kx²</li><li>W = Wđ + Wt = ½kA² = const</li><li>v = ω√(A² - x²), ω = √(k/m)</li></ul></div>
+    <div class="info-block"><h4>Nhận xét</h4><ul><li>Khi qua VTCB: Wđ max, Wt = 0</li><li>Ở biên: Wt max, Wđ = 0</li><li>Cơ năng bảo toàn nếu bỏ qua ma sát</li></ul></div>
+  </div>
+</div>
+
+	<!-- MOMENT LỰC -->
+<div class="page" id="page-torque">
+  <div class="page-header physics-header">
+    <span class="page-badge physics-badge">⚡ Vật Lí</span>
+    <h2>Moment lực – Cân bằng đòn bẩy</h2>
+  </div>
+  <div class="sim-container">
+    <div class="sim-toolbar">
+      <span class="sim-title">// MOMENT LỰC. M = F.d</span>
+      <button class="btn btn-physics" onclick="updateTorque()">🔄 Cân bằng</button>
+      <button class="btn btn-secondary" onclick="resetTorque()">↺ Reset</button>
+    </div>
+    <div class="sim-canvas" style="padding:0;">
+      <canvas id="torque-canvas" width="700" height="280" style="display:block;max-width:100%;background:#cfe9df"></canvas>
+    </div>
+    <div class="sim-controls">
+      <div class="control-group"><label>Lực F₁ (N)</label><input type="number" id="F1-torque" value="10" step="1" min="0" max="100" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Cánh tay đòn d₁ (m)</label><input type="number" id="d1-torque" value="0.8" step="0.1" min="0.1" max="2" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Lực F₂ (N)</label><input type="number" id="F2-torque" value="20" step="1" min="0" max="100" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Cánh tay đòn d₂ (m)</label><input type="number" id="d2-torque" value="0.4" step="0.1" min="0.1" max="2" oninput="updateTorque()"></div>
+    </div>
+  </div>
+  <div class="data-panel">
+    <div class="data-cell"><div class="dc-label">M₁ = F₁.d₁</div><div class="dc-val" id="M1-val">0<span class="dc-unit">Nm</span></div></div>
+    <div class="data-cell"><div class="dc-label">M₂ = F₂.d₂</div><div class="dc-val" id="M2-val">0<span class="dc-unit">Nm</span></div></div>
+    <div class="data-cell"><div class="dc-label">Kết quả</div><div class="dc-val" id="torque-result">Cân bằng</div></div>
+    <div class="data-cell"><div class="dc-label">Quy tắc moment</div><div class="dc-val" style="font-size:12px;">M₁ = M₂ → cân bằng</div></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-block"><h4>Điều kiện cân bằng</h4><ul><li>M₁ = M₂ ⇔ F₁.d₁ = F₂.d₂</li><li>Moment lực làm vật quay quanh trục</li><li>Đòn bẩy: lực nhỏ × cánh tay dài = lực lớn × cánh tay ngắn</li></ul></div>
+    <div class="info-block"><h4>Ứng dụng</h4><ul><li>Kìm, kéo, bập bênh</li><li>Mở nắp chai</li><li>Ròng rọc, bánh răng</li></ul></div>
+  </div>
+</div>
 
     <!-- ==================== VẬT LÍ: MẠCH ĐIỆN ==================== -->
     <div class="page" id="page-circuit">
@@ -711,15 +813,67 @@
     </div>
 
     <!-- ==================== SINH HỌC: TẾ BÀO ==================== -->
-    <div class="page" id="page-cell">
-      <div class="coming-soon-page">
-        <div class="cs-icon">🔬</div>
-        <h1>COMING SOON</h1>
-        <div class="cs-line bio"></div>
-        <p>Mô phỏng cấu tạo tế bào đang được phát triển!</p>
-        <span class="cs-badge bio-badge">Cấu tạo tế bào · Sinh học</span>
+    <!-- Trang Tế Bào Thực Vật -->
+<div class="page" id="page-cell">
+  <div class="page-header bio-header">
+    <span class="page-badge bio-badge">🌿 Sinh Học</span>
+    <h2>Quan sát tế bào thực vật (hành tây)</h2>
+  </div>
+  <div class="sim-container">
+    <div class="sim-toolbar">
+      <span class="sim-title">// KÍNH HIỂN VI ẢO – TẾ BÀO HÀNH TÂY</span>
+      <button class="btn btn-bio" onclick="highlightOrganelle(null)">🔍 Bỏ chọn</button>
+      <button class="btn btn-secondary" onclick="resetCellView()">↺ Làm mới</button>
+    </div>
+    <div class="sim-canvas" style="padding:0; background:#1a2a32; min-height:400px; justify-content:center;">
+      <canvas id="cell-canvas" width="700" height="400" style="display:block; max-width:100%; background:#e8f5e9; border-radius:16px; cursor:pointer;"></canvas>
+    </div>
+    <div class="sim-controls">
+      <div class="control-group">
+        <label>🧬 Chọn bào quan</label>
+        <select id="organelle-select" onchange="showOrganelleInfo(this.value)">
+          <option value="">-- Chọn để xem thông tin --</option>
+          <option value="wall">Thành tế bào</option>
+          <option value="membrane">Màng sinh chất</option>
+          <option value="nucleus">Nhân tế bào</option>
+          <option value="vacuole">Không bào</option>
+          <option value="chloroplast">Lục lạp</option>
+          <option value="mitochondria">Ty thể</option>
+          <option value="golgi">Bộ máy Golgi</option>
+          <option value="er">Lưới nội chất</option>
+          <option value="ribosome">Ribosome</option>
+        </select>
       </div>
     </div>
+    <div class="data-panel" id="organelle-info-panel" style="grid-template-columns:1fr;">
+      <div class="data-cell">
+        <div class="dc-label">🔬 Bào quan</div>
+        <div class="dc-val" id="organelle-name" style="font-size:18px;">–––</div>
+        <div id="organelle-desc" style="margin-top:8px; font-size:13px; color:var(--muted);"></div>
+      </div>
+    </div>
+  </div>
+  <div class="info-grid">
+    <div class="info-block">
+      <h4>📌 Hướng dẫn</h4>
+      <ul>
+        <li>Di chuột qua từng vùng trên tế bào để xem tên bào quan</li>
+        <li>Click vào dropdown hoặc trực tiếp lên hình để xem chi tiết chức năng</li>
+        <li>Tế bào hành tây điển hình: có thành cellulose, không bào lớn, lục lạp ít</li>
+      </ul>
+    </div>
+    <div class="info-block">
+      <h4>🧫 Thành phần chính</h4>
+      <ul>
+        <li><strong>Thành tế bào</strong>: cellulose, tạo hình dạng</li>
+        <li><strong>Màng sinh chất</strong>: kiểm soát vận chuyển</li>
+        <li><strong>Nhân</strong>: chứa DNA, điều khiển hoạt động</li>
+        <li><strong>Lục lạp</strong>: quang hợp</li>
+        <li><strong>Không bào</strong>: dự trữ, điều hòa áp suất</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
   </main>
 </div>
