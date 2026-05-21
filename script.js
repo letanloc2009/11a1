@@ -18,7 +18,8 @@ function showPage(id) {
   const labels = {
     home:'Trang chủ', motion:'Chuyển động thẳng', force:'Lực – Kéo co',
     wave:'Sóng cơ học', optics:'Sóng ánh sáng', circuit:'Mạch điện',
-    acidbase:'Acid – Base', cell:'Tế bào', dna:'Lắp ráp DNA'
+    acidbase:'Acid – Base', cell:'Tế bào', dna:'Lắp ráp DNA',
+    periodic:'Bảng tuần hoàn'
   };
   document.getElementById('status-page').textContent = (labels[id] || id).toUpperCase();
   if (id === 'motion') { updateMotionParam(); drawMotionFrame(); drawGraph(); }
@@ -28,6 +29,7 @@ function showPage(id) {
   if (id === 'circuit') { resetCircuit(); }
   if (id === 'acidbase') { initShelf(); }
   if (id === 'dna') { initDNA(); }
+  if (id === 'periodic') { renderPeriodicTable(); }
   if (window.innerWidth <= 768) closeSidebar();
 }
 
@@ -197,7 +199,7 @@ function drawGraph() {
   ctx.fillText(maxV.toFixed(0), pad.l-4, pad.t+10);
 }
 
-/* ==================== FORCE (bỏ range, dùng number) ==================== */
+/* ==================== FORCE ==================== */
 let forceRunning = false, forceRAF = null, forceOffset = 0, forceVelocity = 0, forceLastTime = null;
 
 function getForceValues() {
@@ -332,7 +334,7 @@ function drawForceScene(offset) {
   ctx.fillText('HỢP LỰC: '+(net>=0?'+':'')+net.toFixed(0)+' N', W/2, barY+barH+16);
 }
 
-/* ==================== WAVE SIM (number inputs) ==================== */
+/* ==================== WAVE SIM ==================== */
 let waveRunning = false, waveRAF = null, wavePhase = 0, waveLastTime = null;
 
 function updateWaveAmpNumber() { let val = document.getElementById('wave-amp').value; resetWave(); }
@@ -484,7 +486,7 @@ function drawWaveFrame(phase) {
   ctx.fillText('→ truyền', W-58, 30);
 }
 
-/* ==================== OPTICS (bỏ nút) ==================== */
+/* ==================== OPTICS ==================== */
 function runOptics() {
   const c = document.getElementById('optics-canvas'); if (!c) return;
   const ctx = c.getContext('2d');
@@ -608,7 +610,7 @@ function drawInterference(ctx, W, H) {
   ctx.fillText('Vân sáng: δ=kλ', W*0.8, H-20);
 }
 
-/* ==================== CIRCUIT (number inputs) ==================== */
+/* ==================== CIRCUIT ==================== */
 let circuitClosed = false;
 
 function setSwitch(closed) {
@@ -762,7 +764,7 @@ function drawCircuit(closed, I, E) {
   }
 }
 
-/* ==================== CHEMISTRY (giữ nguyên, chỉ số lớn) ==================== */
+/* ==================== CHEMISTRY ==================== */
 const chemicals = [
   { id:'HCl',  name:'HCl',    type:'acid',    strength:'strong', pH:1.0,  pKa: -6,   pKb: null, color:'#ff8a65cc', typeLabel:'Acid mạnh',  formula:'HCl → H⁺ + Cl⁻' },
   { id:'H2SO4',name:'H₂SO₄', type:'acid',    strength:'strong', pH:0.5,  pKa: -3,   pKb: null, color:'#ff7043cc', typeLabel:'Acid mạnh',  formula:'H₂SO₄ → 2H⁺ + SO₄²⁻' },
@@ -871,7 +873,7 @@ function mixChemicals() {
   const concA = parseFloat(document.getElementById('conc-A').value) || 0.1;
   const concB = parseFloat(document.getElementById('conc-B').value) || 0.1;
   const volA = parseFloat(document.getElementById('vol-A').value) || 1.0;
-  const volB = volA; // giả sử cùng thể tích
+  const volB = volA;
   const volTotal = volA + volB;
   
   let finalpH = 7.0;
@@ -908,12 +910,12 @@ function mixChemicals() {
       const h_conc = (nH - nOH) / volTotal;
       finalpH = -Math.log10(h_conc);
       env = 'Acid';
-      description = `Acid ${(nH-nOH).toFixed(4)} mol → pH = ${finalpH.toFixed(2)}`;
+      description = `Acid dư ${(nH-nOH).toFixed(4)} mol → pH = ${finalpH.toFixed(2)}`;
     } else {
       const oh_conc = (nOH - nH) / volTotal;
       finalpH = 14 - (-Math.log10(oh_conc));
       env = 'Kiềm';
-      description = `Kiềm ${(nOH-nH).toFixed(4)} mol → pH = ${finalpH.toFixed(2)}`;
+      description = `Kiềm dư ${(nOH-nH).toFixed(4)} mol → pH = ${finalpH.toFixed(2)}`;
     }
   } 
   else if (selectedA.type === 'acid' && selectedB.type === 'acid') {
@@ -1015,7 +1017,158 @@ function resetChem() {
   updateLitmus();
 }
 
-/* ==================== DNA (giữ nguyên) ==================== */
+/* ==================== PERIODIC TABLE ==================== */
+const elementsData = [
+  { symbol:"H", name:"Hydrogen", number:1, mass:1.008, group:1, period:1, category:"nonmetal", electronegativity:2.20, config:"1s¹" },
+  { symbol:"He", name:"Helium", number:2, mass:4.0026, group:18, period:1, category:"noble gas", electronegativity:null, config:"1s²" },
+  { symbol:"Li", name:"Lithium", number:3, mass:6.94, group:1, period:2, category:"alkali metal", electronegativity:0.98, config:"[He] 2s¹" },
+  { symbol:"Be", name:"Beryllium", number:4, mass:9.012, group:2, period:2, category:"alkaline earth", electronegativity:1.57, config:"[He] 2s²" },
+  { symbol:"B", name:"Boron", number:5, mass:10.81, group:13, period:2, category:"metalloid", electronegativity:2.04, config:"[He] 2s² 2p¹" },
+  { symbol:"C", name:"Carbon", number:6, mass:12.011, group:14, period:2, category:"nonmetal", electronegativity:2.55, config:"[He] 2s² 2p²" },
+  { symbol:"N", name:"Nitrogen", number:7, mass:14.007, group:15, period:2, category:"nonmetal", electronegativity:3.04, config:"[He] 2s² 2p³" },
+  { symbol:"O", name:"Oxygen", number:8, mass:15.999, group:16, period:2, category:"nonmetal", electronegativity:3.44, config:"[He] 2s² 2p⁴" },
+  { symbol:"F", name:"Fluorine", number:9, mass:18.998, group:17, period:2, category:"halogen", electronegativity:3.98, config:"[He] 2s² 2p⁵" },
+  { symbol:"Ne", name:"Neon", number:10, mass:20.180, group:18, period:2, category:"noble gas", electronegativity:null, config:"[He] 2s² 2p⁶" },
+  { symbol:"Na", name:"Sodium", number:11, mass:22.990, group:1, period:3, category:"alkali metal", electronegativity:0.93, config:"[Ne] 3s¹" },
+  { symbol:"Mg", name:"Magnesium", number:12, mass:24.305, group:2, period:3, category:"alkaline earth", electronegativity:1.31, config:"[Ne] 3s²" },
+  { symbol:"Al", name:"Aluminium", number:13, mass:26.982, group:13, period:3, category:"post-transition", electronegativity:1.61, config:"[Ne] 3s² 3p¹" },
+  { symbol:"Si", name:"Silicon", number:14, mass:28.086, group:14, period:3, category:"metalloid", electronegativity:1.90, config:"[Ne] 3s² 3p²" },
+  { symbol:"P", name:"Phosphorus", number:15, mass:30.974, group:15, period:3, category:"nonmetal", electronegativity:2.19, config:"[Ne] 3s² 3p³" },
+  { symbol:"S", name:"Sulfur", number:16, mass:32.06, group:16, period:3, category:"nonmetal", electronegativity:2.58, config:"[Ne] 3s² 3p⁴" },
+  { symbol:"Cl", name:"Chlorine", number:17, mass:35.45, group:17, period:3, category:"halogen", electronegativity:3.16, config:"[Ne] 3s² 3p⁵" },
+  { symbol:"Ar", name:"Argon", number:18, mass:39.95, group:18, period:3, category:"noble gas", electronegativity:null, config:"[Ne] 3s² 3p⁶" },
+  { symbol:"K", name:"Potassium", number:19, mass:39.098, group:1, period:4, category:"alkali metal", electronegativity:0.82, config:"[Ar] 4s¹" },
+  { symbol:"Ca", name:"Calcium", number:20, mass:40.078, group:2, period:4, category:"alkaline earth", electronegativity:1.00, config:"[Ar] 4s²" },
+  { symbol:"Sc", name:"Scandium", number:21, mass:44.956, group:3, period:4, category:"transition", electronegativity:1.36, config:"[Ar] 3d¹ 4s²" },
+  { symbol:"Ti", name:"Titanium", number:22, mass:47.867, group:4, period:4, category:"transition", electronegativity:1.54, config:"[Ar] 3d² 4s²" },
+  { symbol:"V", name:"Vanadium", number:23, mass:50.942, group:5, period:4, category:"transition", electronegativity:1.63, config:"[Ar] 3d³ 4s²" },
+  { symbol:"Cr", name:"Chromium", number:24, mass:51.996, group:6, period:4, category:"transition", electronegativity:1.66, config:"[Ar] 3d⁵ 4s¹" },
+  { symbol:"Mn", name:"Manganese", number:25, mass:54.938, group:7, period:4, category:"transition", electronegativity:1.55, config:"[Ar] 3d⁵ 4s²" },
+  { symbol:"Fe", name:"Iron", number:26, mass:55.845, group:8, period:4, category:"transition", electronegativity:1.83, config:"[Ar] 3d⁶ 4s²" },
+  { symbol:"Co", name:"Cobalt", number:27, mass:58.933, group:9, period:4, category:"transition", electronegativity:1.88, config:"[Ar] 3d⁷ 4s²" },
+  { symbol:"Ni", name:"Nickel", number:28, mass:58.693, group:10, period:4, category:"transition", electronegativity:1.91, config:"[Ar] 3d⁸ 4s²" },
+  { symbol:"Cu", name:"Copper", number:29, mass:63.546, group:11, period:4, category:"transition", electronegativity:1.90, config:"[Ar] 3d¹⁰ 4s¹" },
+  { symbol:"Zn", name:"Zinc", number:30, mass:65.38, group:12, period:4, category:"transition", electronegativity:1.65, config:"[Ar] 3d¹⁰ 4s²" },
+  { symbol:"Ga", name:"Gallium", number:31, mass:69.723, group:13, period:4, category:"post-transition", electronegativity:1.81, config:"[Ar] 3d¹⁰ 4s² 4p¹" },
+  { symbol:"Ge", name:"Germanium", number:32, mass:72.630, group:14, period:4, category:"metalloid", electronegativity:2.01, config:"[Ar] 3d¹⁰ 4s² 4p²" },
+  { symbol:"As", name:"Arsenic", number:33, mass:74.922, group:15, period:4, category:"metalloid", electronegativity:2.18, config:"[Ar] 3d¹⁰ 4s² 4p³" },
+  { symbol:"Se", name:"Selenium", number:34, mass:78.971, group:16, period:4, category:"nonmetal", electronegativity:2.55, config:"[Ar] 3d¹⁰ 4s² 4p⁴" },
+  { symbol:"Br", name:"Bromine", number:35, mass:79.904, group:17, period:4, category:"halogen", electronegativity:2.96, config:"[Ar] 3d¹⁰ 4s² 4p⁵" },
+  { symbol:"Kr", name:"Krypton", number:36, mass:83.798, group:18, period:4, category:"noble gas", electronegativity:3.00, config:"[Ar] 3d¹⁰ 4s² 4p⁶" },
+  // Thêm từ 37 Rb đến 86 Rn cho đủ
+  { symbol:"Rb", name:"Rubidium", number:37, mass:85.468, group:1, period:5, category:"alkali metal", electronegativity:0.82, config:"[Kr] 5s¹" },
+  { symbol:"Sr", name:"Strontium", number:38, mass:87.62, group:2, period:5, category:"alkaline earth", electronegativity:0.95, config:"[Kr] 5s²" },
+  { symbol:"Y", name:"Yttrium", number:39, mass:88.906, group:3, period:5, category:"transition", electronegativity:1.22, config:"[Kr] 4d¹ 5s²" },
+  { symbol:"Zr", name:"Zirconium", number:40, mass:91.224, group:4, period:5, category:"transition", electronegativity:1.33, config:"[Kr] 4d² 5s²" },
+  { symbol:"Nb", name:"Niobium", number:41, mass:92.906, group:5, period:5, category:"transition", electronegativity:1.6, config:"[Kr] 4d⁴ 5s¹" },
+  { symbol:"Mo", name:"Molybdenum", number:42, mass:95.95, group:6, period:5, category:"transition", electronegativity:2.16, config:"[Kr] 4d⁵ 5s¹" },
+  { symbol:"Tc", name:"Technetium", number:43, mass:98, group:7, period:5, category:"transition", electronegativity:1.9, config:"[Kr] 4d⁵ 5s²" },
+  { symbol:"Ru", name:"Ruthenium", number:44, mass:101.07, group:8, period:5, category:"transition", electronegativity:2.2, config:"[Kr] 4d⁷ 5s¹" },
+  { symbol:"Rh", name:"Rhodium", number:45, mass:102.91, group:9, period:5, category:"transition", electronegativity:2.28, config:"[Kr] 4d⁸ 5s¹" },
+  { symbol:"Pd", name:"Palladium", number:46, mass:106.42, group:10, period:5, category:"transition", electronegativity:2.20, config:"[Kr] 4d¹⁰" },
+  { symbol:"Ag", name:"Silver", number:47, mass:107.87, group:11, period:5, category:"transition", electronegativity:1.93, config:"[Kr] 4d¹⁰ 5s¹" },
+  { symbol:"Cd", name:"Cadmium", number:48, mass:112.41, group:12, period:5, category:"transition", electronegativity:1.69, config:"[Kr] 4d¹⁰ 5s²" },
+  { symbol:"In", name:"Indium", number:49, mass:114.82, group:13, period:5, category:"post-transition", electronegativity:1.78, config:"[Kr] 4d¹⁰ 5s² 5p¹" },
+  { symbol:"Sn", name:"Tin", number:50, mass:118.71, group:14, period:5, category:"post-transition", electronegativity:1.96, config:"[Kr] 4d¹⁰ 5s² 5p²" },
+  { symbol:"Sb", name:"Antimony", number:51, mass:121.76, group:15, period:5, category:"metalloid", electronegativity:2.05, config:"[Kr] 4d¹⁰ 5s² 5p³" },
+  { symbol:"Te", name:"Tellurium", number:52, mass:127.6, group:16, period:5, category:"metalloid", electronegativity:2.1, config:"[Kr] 4d¹⁰ 5s² 5p⁴" },
+  { symbol:"I", name:"Iodine", number:53, mass:126.90, group:17, period:5, category:"halogen", electronegativity:2.66, config:"[Kr] 4d¹⁰ 5s² 5p⁵" },
+  { symbol:"Xe", name:"Xenon", number:54, mass:131.29, group:18, period:5, category:"noble gas", electronegativity:2.6, config:"[Kr] 4d¹⁰ 5s² 5p⁶" },
+  { symbol:"Cs", name:"Cesium", number:55, mass:132.91, group:1, period:6, category:"alkali metal", electronegativity:0.79, config:"[Xe] 6s¹" },
+  { symbol:"Ba", name:"Barium", number:56, mass:137.33, group:2, period:6, category:"alkaline earth", electronegativity:0.89, config:"[Xe] 6s²" },
+  // Lanthanides (57-71) gộp chung category lanthanide
+  { symbol:"La", name:"Lanthanum", number:57, mass:138.91, group:3, period:6, category:"lanthanide", electronegativity:1.1, config:"[Xe] 5d¹ 6s²" },
+  { symbol:"Ce", name:"Cerium", number:58, mass:140.12, group:3, period:6, category:"lanthanide", electronegativity:1.12, config:"[Xe] 4f¹ 5d¹ 6s²" },
+  { symbol:"Pr", name:"Praseodymium", number:59, mass:140.91, group:3, period:6, category:"lanthanide", electronegativity:1.13, config:"[Xe] 4f³ 6s²" },
+  { symbol:"Nd", name:"Neodymium", number:60, mass:144.24, group:3, period:6, category:"lanthanide", electronegativity:1.14, config:"[Xe] 4f⁴ 6s²" },
+  { symbol:"Pm", name:"Promethium", number:61, mass:145, group:3, period:6, category:"lanthanide", electronegativity:1.13, config:"[Xe] 4f⁵ 6s²" },
+  { symbol:"Sm", name:"Samarium", number:62, mass:150.36, group:3, period:6, category:"lanthanide", electronegativity:1.17, config:"[Xe] 4f⁶ 6s²" },
+  { symbol:"Eu", name:"Europium", number:63, mass:151.96, group:3, period:6, category:"lanthanide", electronegativity:1.2, config:"[Xe] 4f⁷ 6s²" },
+  { symbol:"Gd", name:"Gadolinium", number:64, mass:157.25, group:3, period:6, category:"lanthanide", electronegativity:1.2, config:"[Xe] 4f⁷ 5d¹ 6s²" },
+  { symbol:"Tb", name:"Terbium", number:65, mass:158.93, group:3, period:6, category:"lanthanide", electronegativity:1.2, config:"[Xe] 4f⁹ 6s²" },
+  { symbol:"Dy", name:"Dysprosium", number:66, mass:162.5, group:3, period:6, category:"lanthanide", electronegativity:1.22, config:"[Xe] 4f¹⁰ 6s²" },
+  { symbol:"Ho", name:"Holmium", number:67, mass:164.93, group:3, period:6, category:"lanthanide", electronegativity:1.23, config:"[Xe] 4f¹¹ 6s²" },
+  { symbol:"Er", name:"Erbium", number:68, mass:167.26, group:3, period:6, category:"lanthanide", electronegativity:1.24, config:"[Xe] 4f¹² 6s²" },
+  { symbol:"Tm", name:"Thulium", number:69, mass:168.93, group:3, period:6, category:"lanthanide", electronegativity:1.25, config:"[Xe] 4f¹³ 6s²" },
+  { symbol:"Yb", name:"Ytterbium", number:70, mass:173.05, group:3, period:6, category:"lanthanide", electronegativity:1.1, config:"[Xe] 4f¹⁴ 6s²" },
+  { symbol:"Lu", name:"Lutetium", number:71, mass:174.97, group:3, period:6, category:"lanthanide", electronegativity:1.27, config:"[Xe] 4f¹⁴ 5d¹ 6s²" },
+  { symbol:"Hf", name:"Hafnium", number:72, mass:178.49, group:4, period:6, category:"transition", electronegativity:1.3, config:"[Xe] 4f¹⁴ 5d² 6s²" },
+  { symbol:"Ta", name:"Tantalum", number:73, mass:180.95, group:5, period:6, category:"transition", electronegativity:1.5, config:"[Xe] 4f¹⁴ 5d³ 6s²" },
+  { symbol:"W", name:"Tungsten", number:74, mass:183.84, group:6, period:6, category:"transition", electronegativity:2.36, config:"[Xe] 4f¹⁴ 5d⁴ 6s²" },
+  { symbol:"Re", name:"Rhenium", number:75, mass:186.21, group:7, period:6, category:"transition", electronegativity:1.9, config:"[Xe] 4f¹⁴ 5d⁵ 6s²" },
+  { symbol:"Os", name:"Osmium", number:76, mass:190.23, group:8, period:6, category:"transition", electronegativity:2.2, config:"[Xe] 4f¹⁴ 5d⁶ 6s²" },
+  { symbol:"Ir", name:"Iridium", number:77, mass:192.22, group:9, period:6, category:"transition", electronegativity:2.2, config:"[Xe] 4f¹⁴ 5d⁷ 6s²" },
+  { symbol:"Pt", name:"Platinum", number:78, mass:195.08, group:10, period:6, category:"transition", electronegativity:2.28, config:"[Xe] 4f¹⁴ 5d⁹ 6s¹" },
+  { symbol:"Au", name:"Gold", number:79, mass:196.97, group:11, period:6, category:"transition", electronegativity:2.54, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s¹" },
+  { symbol:"Hg", name:"Mercury", number:80, mass:200.59, group:12, period:6, category:"transition", electronegativity:2.00, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s²" },
+  { symbol:"Tl", name:"Thallium", number:81, mass:204.38, group:13, period:6, category:"post-transition", electronegativity:1.62, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹" },
+  { symbol:"Pb", name:"Lead", number:82, mass:207.2, group:14, period:6, category:"post-transition", electronegativity:2.33, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²" },
+  { symbol:"Bi", name:"Bismuth", number:83, mass:208.98, group:15, period:6, category:"post-transition", electronegativity:2.02, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³" },
+  { symbol:"Po", name:"Polonium", number:84, mass:209, group:16, period:6, category:"post-transition", electronegativity:2.0, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴" },
+  { symbol:"At", name:"Astatine", number:85, mass:210, group:17, period:6, category:"halogen", electronegativity:2.2, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵" },
+  { symbol:"Rn", name:"Radon", number:86, mass:222, group:18, period:6, category:"noble gas", electronegativity:null, config:"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶" },
+  // Thêm 87-118 nếu cần (có thể bỏ qua vì không gian)
+];
+
+function getElementColor(category) {
+  switch(category) {
+    case 'alkali metal': return '#e74c3c';
+    case 'alkaline earth': return '#f39c12';
+    case 'transition': return '#2ecc71';
+    case 'post-transition': return '#1abc9c';
+    case 'metalloid': return '#9b59b6';
+    case 'nonmetal': return '#3498db';
+    case 'halogen': return '#e67e22';
+    case 'noble gas': return '#1f618d';
+    case 'lanthanide': return '#95a5a6';
+    default: return '#95a5a6';
+  }
+}
+
+function renderPeriodicTable() {
+  const container = document.getElementById('periodic-table-container');
+  if (!container) return;
+  let html = '<div style="display: grid; grid-template-columns: repeat(18, minmax(55px, 1fr)); gap: 4px; font-family: monospace;">';
+  for (let i = 1; i <= 86; i++) {
+    const elem = elementsData.find(e => e.number === i);
+    if (elem) {
+      const color = getElementColor(elem.category);
+      html += `<div class="periodic-cell" data-symbol="${elem.symbol}" style="background: ${color}; color: white; border-radius: 6px; padding: 8px 4px; text-align: center; cursor: pointer; transition: 0.1s; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                  <div style="font-size: 10px;">${elem.number}</div>
+                  <div style="font-size: 14px;">${elem.symbol}</div>
+                </div>`;
+    } else {
+      html += `<div style="background: rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 4px; text-align: center;"></div>`;
+    }
+  }
+  html += '</div>';
+  container.innerHTML = html;
+  
+  document.querySelectorAll('.periodic-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const symbol = cell.dataset.symbol;
+      const element = elementsData.find(e => e.symbol === symbol);
+      if (element) {
+        document.getElementById('element-detail').style.display = 'block';
+        document.getElementById('element-name').innerHTML = `${element.name} (${element.symbol})`;
+        document.getElementById('element-info').innerHTML = `
+          <strong>Số hiệu:</strong> ${element.number}<br>
+          <strong>Khối lượng:</strong> ${element.mass} u<br>
+          <strong>Nhóm:</strong> ${element.group}, Chu kỳ: ${element.period}<br>
+          <strong>Độ âm điện:</strong> ${element.electronegativity || '—'}<br>
+          <strong>Cấu hình e:</strong> ${element.config}<br>
+          <strong>Phân loại:</strong> ${element.category}
+        `;
+      }
+    });
+  });
+}
+
+function resetPeriodicHighlight() {
+  document.getElementById('element-detail').style.display = 'none';
+}
+
+/* ==================== DNA ==================== */
 const DNA_PAIRS = { A:'T', T:'A', G:'C', C:'G' };
 const BASE_COLORS = { A:'#e74c3c', T:'#3498db', G:'#2ecc71', C:'#f39c12' };
 const STRAND_LENGTH = 10;
@@ -1150,4 +1303,5 @@ window.addEventListener('load', () => {
   initShelf();
   initDNA();
   runOptics();
+  renderPeriodicTable();
 });
