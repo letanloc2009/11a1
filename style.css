@@ -6,7 +6,6 @@
   --text: #1a2640;
   --muted: #6b82a0;
 
-  /* Subject colors */
   --physics: #e74c3c;
   --physics-light: #fdecea;
   --physics-mid: #f5a9a4;
@@ -33,7 +32,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ── HEADER ── */
 header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   height: var(--header-h);
@@ -64,7 +62,6 @@ header {
   letter-spacing: 0.1em;
 }
 
-/* ── HAMBURGER ── */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -99,14 +96,12 @@ header {
 }
 .btn-mail:hover { background: rgba(255,255,255,0.35); }
 
-/* ── LAYOUT ── */
 .layout {
   display: flex;
   margin-top: var(--header-h);
   min-height: calc(100vh - var(--header-h));
 }
 
-/* ── SIDEBAR ── */
 aside {
   width: var(--sidebar-w);
   min-height: calc(100vh - var(--header-h));
@@ -195,18 +190,15 @@ aside {
 .nav-item:hover { background: #f0f7ff; color: #1565c0; }
 .nav-item.active { background: #ddeeff; color: #1565c0; font-weight: 700; }
 
-/* ── MAIN ── */
 main {
   flex: 1;
   padding: 28px 36px 70px;
   min-width: 0;
 }
 
-/* ── PAGES ── */
 .page { display: none; }
 .page.active { display: block; }
 
-/* ── PAGE HEADER ── */
 .page-header {
   margin-bottom: 24px;
   padding: 20px 24px;
@@ -235,7 +227,6 @@ main {
 .chem-badge { background: var(--chem); color: #fff; }
 .bio-badge { background: var(--bio); color: #fff; }
 
-/* ── HERO ── */
 .hero {
   background: linear-gradient(135deg, #1565c0 0%, #1976d2 40%, #4fc3f7 100%);
   border-radius: var(--radius);
@@ -281,7 +272,6 @@ main {
   position: relative;
 }
 
-/* ── SECTION TITLE ── */
 .section-title {
   font-size: 18px;
   font-weight: 800;
@@ -290,7 +280,6 @@ main {
   letter-spacing: 0.03em;
 }
 
-/* ── CARDS ── */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -318,7 +307,6 @@ main {
 .card h3 { font-size: 14px; font-weight: 800; margin-bottom: 6px; color: var(--text); }
 .card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
-/* ── SIM CONTAINER ── */
 .sim-container {
   background: var(--surface);
   border-radius: var(--radius);
@@ -343,7 +331,6 @@ main {
   min-width: 0;
 }
 
-/* ── BUTTONS ── */
 .btn {
   padding: 8px 16px;
   border: none;
@@ -365,7 +352,6 @@ main {
 .btn-secondary { background: #2a3a55; color: #aac4e6; }
 .btn-secondary:hover { background: #3a4f70; }
 
-/* ── SIM CANVAS ── */
 .sim-canvas {
   display: flex;
   align-items: center;
@@ -376,7 +362,6 @@ main {
   position: relative;
 }
 
-/* ── SIM CONTROLS ── */
 .sim-controls {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -394,7 +379,10 @@ main {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-.control-group input[type="number"],
+/* .control-group input[type="number"], */
+.control-group input[type="number"] {
+    width: 100%;
+}
 .control-group select {
   padding: 8px 12px;
   border: 2px solid var(--border);
@@ -409,19 +397,13 @@ main {
 .control-group input[type="number"]:focus,
 .control-group select:focus { border-color: #1976d2; }
 
-.control-group input[type="range"] {
+/* Đảm bảo ô input số có chiều rộng đầy đủ và hiển thị đẹp */
+.control-group input[type="number"] {
   width: 100%;
-  accent-color: #1976d2;
+  box-sizing: border-box;
+  padding: 10px 14px;
 }
 
-.control-group .val {
-  font-size: 12px;
-  color: #1976d2;
-  font-weight: 700;
-  font-family: 'Space Mono', monospace;
-}
-
-/* ── DATA PANEL ── */
 .data-panel {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -459,7 +441,6 @@ main {
   margin-left: 2px;
 }
 
-/* ── INFO GRID ── */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -496,10 +477,8 @@ main {
 }
 .info-block ul li::before { content: '→'; color: #1976d2; flex-shrink: 0; }
 
-/* ── FORCE SIM ── */
 #force-canvas { display: block; max-width: 100%; background: #0d1b2a; }
 
-/* ── COMING SOON ── */
 .coming-soon-page {
   display: flex; flex-direction: column;
   justify-content: center; align-items: center;
@@ -518,7 +497,6 @@ main {
 .cs-line.bio { background: var(--bio); }
 .coming-soon-page p { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 340px; }
 
-/* ── CHEM: KỆ HÓA CHẤT ── */
 .chem-shelf {
   background: #f8f4e8;
   border: 2px solid #d4c9a0;
@@ -570,7 +548,6 @@ main {
 .slot-name { font-size: 14px; font-weight: 800; color: var(--text); font-family: 'Space Mono', monospace; }
 .plus-sign { font-size: 28px; color: #e74c3c; font-weight: 700; }
 
-/* ── GIẤY QUỲ TÍM ── */
 .litmus-section {
   margin: 0 16px 16px;
   padding: 14px;
@@ -594,7 +571,6 @@ main {
   font-size: 14px; font-weight: 700; color: #7b1fa2;
 }
 
-/* ── BEAKER SECTION ── */
 .beaker-section {
   padding: 0 16px 16px;
 }
@@ -635,7 +611,6 @@ main {
 .plus-sign2 { font-size: 24px; color: #aac4e6; padding-bottom: 16px; }
 @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
 
-/* ── REACTION EQUATION ── */
 .reaction-equation {
   background: #e8f5e9;
   border: 2px solid #a5d6a7;
@@ -650,7 +625,6 @@ main {
 }
 .equation-note { font-size: 12px; color: #388e3c; margin-top: 6px; }
 
-/* ── DNA WORKSPACE ── */
 .dna-workspace {
   padding: 16px;
   background: #0d1b2a;
@@ -765,7 +739,6 @@ main {
   min-height: 44px;
 }
 
-/* ── MODAL ── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 999;
   background: rgba(10,20,40,0.7);
@@ -837,7 +810,6 @@ main {
 }
 .success-msg .check { font-size: 40px; margin-bottom: 12px; }
 
-/* ── STATUS BAR ── */
 .statusbar {
   position: fixed; bottom: 0; left: var(--sidebar-w); right: 0;
   height: 28px;
@@ -857,12 +829,10 @@ main {
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-/* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: #90c4f0; border-radius: 6px; }
 
-/* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .hamburger { display: flex; }
   .header-center { display: none; }
@@ -878,17 +848,39 @@ main {
   }
   aside.open { transform: translateX(0); }
 
-  main { padding: 16px 14px 60px; }
+  main { padding: 16px 14px 60px; overflow-x: hidden; }
   .hero { padding: 30px 20px; }
   .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .data-panel { grid-template-columns: repeat(2, 1fr); }
-  .sim-controls { grid-template-columns: 1fr 1fr; }
+  .data-panel { grid-template-columns: repeat(2, 1fr); gap: 8px;}
+  
+  .sim-controls { grid-template-columns: 1fr; padding: 12px; }
+  #force-inputs { grid-template-columns: 1fr !important; }
+  
+  .sim-canvas { padding: 10px; min-height: 220px; }
+  canvas { max-width: 100% !important; height: auto !important; }
+  
+  .beaker-wrap { padding: 16px 10px; gap: 8px; }
+  .beaker { width: 55px; height: 100px; }
+  .reaction-arrow, .plus-sign2 { font-size: 18px; padding-bottom: 8px; }
+  .beaker-label { font-size: 10px; top: -20px; }
+  
+  .shelf-selected { justify-content: center; padding: 8px; gap: 8px; }
+  .selected-slot { min-width: 100px; padding: 8px; }
+  
   .statusbar { left: 0; font-size: 9px; }
-  .beaker { width: 60px; height: 110px; }
-  #force-inputs { grid-template-columns: 1fr 1fr !important; }
 }
-
+/* Thêm cho phần nồng độ hóa học */
+.concentration-inputs .control-group {
+  flex: 1;
+  min-width: 130px;
+}
+.concentration-inputs input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
 @media (max-width: 420px) {
   .cards-grid { grid-template-columns: 1fr; }
-  .sim-controls { grid-template-columns: 1fr; }
+  .beaker { width: 45px; height: 80px; }
 }
