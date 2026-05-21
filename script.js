@@ -151,23 +151,18 @@ function drawMotionFrame(v, s) {
   const carX = Math.min((curS / Math.max(sMax, 1)) * W, W - 70);
   const carY = H * 0.58;
   const cw = 62, ch = 26;
-  // Car body
   ctx.shadowBlur = 14; ctx.shadowColor = '#1565c0';
   ctx.fillStyle = '#1565c0'; ctx.beginPath();
   ctx.roundRect ? ctx.roundRect(carX, carY, cw, ch, 5) : ctx.fillRect(carX, carY, cw, ch);
   ctx.fill(); ctx.shadowBlur = 0;
-  // Roof
   ctx.fillStyle = '#1976d2';
   ctx.beginPath(); ctx.moveTo(carX+10, carY); ctx.lineTo(carX+18, carY-14); ctx.lineTo(carX+44, carY-14); ctx.lineTo(carX+52, carY); ctx.closePath(); ctx.fill();
-  // Windows
   ctx.fillStyle = '#80d8ff';
   ctx.fillRect(carX+20, carY-12, 10, 10); ctx.fillRect(carX+33, carY-12, 10, 10);
-  // Wheels
   [carX+12, carX+44].forEach(wx => {
     ctx.fillStyle = '#263238'; ctx.beginPath(); ctx.arc(wx, carY+ch, 9, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#b0bec5'; ctx.beginPath(); ctx.arc(wx, carY+ch, 4, 0, Math.PI*2); ctx.fill();
   });
-  // Speed text
   const speedText = (v||mV0).toFixed(1) + ' m/s';
   ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Space Mono,monospace'; ctx.textAlign = 'center';
   ctx.fillText(speedText, carX + 31, carY - 20);
@@ -202,14 +197,14 @@ function drawGraph() {
   ctx.fillText(maxV.toFixed(0), pad.l-4, pad.t+10);
 }
 
-/* ==================== FORCE ==================== */
+/* ==================== FORCE (bỏ range, dùng number) ==================== */
 let forceRunning = false, forceRAF = null, forceOffset = 0, forceVelocity = 0, forceLastTime = null;
 
 function getForceValues() {
   const f1 = parseFloat(document.getElementById('force-left').value) || 0;
   const f2 = parseFloat(document.getElementById('force-right').value) || 0;
   const maxF = Math.max(f1, f2, 1);
-  return { f1, f2, pl: Math.max(1, Math.round((f1/maxF)*8)), pr: Math.max(1, Math.round((f2/maxF)*8)) };
+  return { f1, f2, pl: Math.max(1, Math.min(20, Math.round((f1/maxF)*8))), pr: Math.max(1, Math.min(20, Math.round((f2/maxF)*8))) };
 }
 
 function updateForceDisplay() {
@@ -243,7 +238,7 @@ function forceLoop(ts) {
   const dt = Math.min((ts - forceLastTime)/1000, 0.05); forceLastTime = ts;
   const { f1, f2 } = getForceValues();
   const net = f2 - f1;
-  forceVelocity = forceVelocity * 0.97 + (net/50) * dt;
+  forceVelocity = forceVelocity * 0.97 + (net/500) * dt;
   forceOffset += forceVelocity * dt;
   forceOffset = Math.max(-1, Math.min(1, forceOffset));
   drawForceScene(forceOffset);
@@ -309,8 +304,8 @@ function drawForceScene(offset) {
     const px = centerX+40+(i+1)*rspacing;
     if (px < ropeRight-10) drawPerson(px, ropeY+2, rightColors[i%rightColors.length], true);
   }
-  const arrowLen = Math.min(80, f1/2);
-  const arrowLenR = Math.min(80, f2/2);
+  const arrowLen = Math.min(120, f1/3);
+  const arrowLenR = Math.min(120, f2/3);
   const arrowY = ropeY-62;
   ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = '#e74c3c';
   ctx.beginPath(); ctx.moveTo(ropeLeft+arrowLen+10, arrowY); ctx.lineTo(ropeLeft+10, arrowY); ctx.stroke();
@@ -327,7 +322,7 @@ function drawForceScene(offset) {
   ctx.fillStyle = '#222'; ctx.fillRect(barX, barY, barW, barH);
   const net = f2-f1;
   if (Math.abs(net) > 1) {
-    const fillW = Math.min(Math.abs(net)/200, 1)*(barW/2);
+    const fillW = Math.min(Math.abs(net)/1000, 1)*(barW/2);
     ctx.fillStyle = net>0 ? '#2980b9' : '#e74c3c';
     if (net > 0) ctx.fillRect(barX+barW/2, barY, fillW, barH);
     else ctx.fillRect(barX+barW/2-fillW, barY, fillW, barH);
@@ -337,8 +332,12 @@ function drawForceScene(offset) {
   ctx.fillText('HỢP LỰC: '+(net>=0?'+':'')+net.toFixed(0)+' N', W/2, barY+barH+16);
 }
 
-/* ==================== WAVE SIM ==================== */
+/* ==================== WAVE SIM (number inputs) ==================== */
 let waveRunning = false, waveRAF = null, wavePhase = 0, waveLastTime = null;
+
+function updateWaveAmpNumber() { let val = document.getElementById('wave-amp').value; resetWave(); }
+function updateWaveFreqNumber() { let val = document.getElementById('wave-freq').value; resetWave(); }
+function updateWaveSpeedNumber() { let val = document.getElementById('wave-speed').value; resetWave(); }
 
 function toggleWave() {
   waveRunning = !waveRunning;
@@ -371,7 +370,7 @@ function updateWaveData() {
   document.getElementById('wave-A-display').innerHTML = A + '<span class="dc-unit">px</span>';
   document.getElementById('wave-f-display').innerHTML = f + '<span class="dc-unit">Hz</span>';
   document.getElementById('wave-T-display').innerHTML = (1/f).toFixed(2) + '<span class="dc-unit">s</span>';
-  document.getElementById('wave-L-display').innerHTML = (spd/f*100).toFixed(0) + '<span class="dc-unit">cm</span>';
+  document.getElementById('wave-L-display').innerHTML = (spd/f).toFixed(1) + '<span class="dc-unit">cm</span>';
 }
 
 function drawWaveFrame(phase) {
@@ -387,21 +386,18 @@ function drawWaveFrame(phase) {
   const f = parseFloat(document.getElementById('wave-freq').value) || 2;
   const spd = parseFloat(document.getElementById('wave-speed').value) || 3;
   const waveType = document.getElementById('wave-type').value;
-  const lambda = spd / f * 80;
+  const lambda = spd / f * (W/6); // scale for display
 
-  // Grid lines
   ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
   for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
   for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
 
-  // Center line
   const cy = H/2;
   ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.setLineDash([10,10]);
   ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
   ctx.setLineDash([]);
 
   if (waveType === 'transverse') {
-    // Transverse wave – draw wave line
     const grad = ctx.createLinearGradient(0,0,W,0);
     grad.addColorStop(0,'#e74c3c'); grad.addColorStop(0.5,'#f39c12'); grad.addColorStop(1,'#e74c3c');
     ctx.strokeStyle = grad; ctx.lineWidth = 3;
@@ -411,25 +407,20 @@ function drawWaveFrame(phase) {
       x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
     ctx.stroke();
-    // Particle markers
     for (let x = 0; x < W; x += 30) {
       const y = cy + A * Math.sin(2*Math.PI*x/lambda - phase);
       ctx.fillStyle = '#ffe082'; ctx.shadowBlur = 8; ctx.shadowColor = '#ffe082';
       ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
       ctx.shadowBlur = 0;
     }
-    // Labels
     ctx.fillStyle = '#aac4e6'; ctx.font = '12px Space Mono,monospace'; ctx.textAlign = 'left';
     ctx.fillText('Sóng ngang – dao động ⊥ phương truyền', 10, 20);
-    // Amplitude arrow
     ctx.strokeStyle = '#ffe082'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.moveTo(20, cy); ctx.lineTo(20, cy-A); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = '#ffe082'; ctx.textAlign = 'left';
     ctx.fillText('A='+A, 24, cy-A/2);
-
   } else if (waveType === 'longitudinal') {
-    // Longitudinal wave – compression/rarefaction dots
     ctx.fillStyle = '#aac4e6'; ctx.font = '12px Space Mono,monospace'; ctx.textAlign = 'left';
     ctx.fillText('Sóng dọc – dao động ∥ phương truyền', 10, 20);
     const rows = 5;
@@ -448,13 +439,10 @@ function drawWaveFrame(phase) {
         ctx.shadowBlur = 0;
       }
     }
-    // Labels
     ctx.fillStyle = '#ffe082'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
     ctx.fillText('NÉNCHẶT', W*0.25, H-12);
     ctx.fillText('LOÃNG', W*0.75, H-12);
-
   } else if (waveType === 'standing') {
-    // Standing wave – two opposite waves
     ctx.strokeStyle = 'rgba(231,76,60,0.4)'; ctx.lineWidth = 2;
     ctx.beginPath();
     for (let x = 0; x < W; x++) {
@@ -469,7 +457,6 @@ function drawWaveFrame(phase) {
       x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
     ctx.stroke();
-    // Standing wave result
     const grad = ctx.createLinearGradient(0,0,W,0);
     grad.addColorStop(0,'#27ae60'); grad.addColorStop(0.5,'#2ecc71'); grad.addColorStop(1,'#27ae60');
     ctx.strokeStyle = grad; ctx.lineWidth = 3;
@@ -479,7 +466,6 @@ function drawWaveFrame(phase) {
       x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
     ctx.stroke();
-    // Nodes & antinodes
     for (let x = 0; x < W; x += lambda/2) {
       ctx.fillStyle = '#e74c3c'; ctx.shadowBlur = 8; ctx.shadowColor = '#e74c3c';
       ctx.beginPath(); ctx.arc(x, cy, 5, 0, Math.PI*2); ctx.fill();
@@ -490,8 +476,6 @@ function drawWaveFrame(phase) {
     ctx.fillStyle = '#aac4e6'; ctx.font = '12px Space Mono,monospace'; ctx.textAlign = 'left';
     ctx.fillText('Sóng dừng – Giao thoa hai sóng ngược chiều', 10, 20);
   }
-
-  // Wave direction arrow
   ctx.strokeStyle = '#7cb9ff'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(W-100, 35); ctx.lineTo(W-20, 35); ctx.stroke();
   ctx.fillStyle = '#7cb9ff';
@@ -500,7 +484,7 @@ function drawWaveFrame(phase) {
   ctx.fillText('→ truyền', W-58, 30);
 }
 
-/* ==================== OPTICS ==================== */
+/* ==================== OPTICS (bỏ nút) ==================== */
 function runOptics() {
   const c = document.getElementById('optics-canvas'); if (!c) return;
   const ctx = c.getContext('2d');
@@ -535,16 +519,13 @@ function runOptics() {
 
 function drawDispersion(ctx, W, H) {
   const cx = W*0.35, cy = H/2;
-  // Prism
   ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(cx-80, cy+80); ctx.lineTo(cx+80, cy+80); ctx.lineTo(cx, cy-80); ctx.closePath();
   ctx.stroke();
   ctx.fillStyle = 'rgba(100,200,255,0.08)'; ctx.fill();
-  // Incident white ray
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.shadowBlur = 6; ctx.shadowColor = '#fff';
   ctx.beginPath(); ctx.moveTo(30, cy-30); ctx.lineTo(cx-20, cy+30); ctx.stroke();
-  // Refracted rays – colors of spectrum
   const colors = ['#ff0000','#ff7700','#ffff00','#00ff00','#0088ff','#4400ff','#8800ff'];
   const angles = [-12,-8,-4,0,4,8,12];
   colors.forEach((col, i) => {
@@ -569,7 +550,6 @@ function drawRefraction(ctx, W, H, i_deg, r_deg, n1, n2) {
   const iRad = i_deg * Math.PI/180;
   const rRad = r_deg * Math.PI/180;
   const midX = W/2, midY = H/2;
-  // Interface
   ctx.fillStyle = 'rgba(52,152,219,0.1)';
   ctx.fillRect(0, midY, W, H-midY);
   ctx.strokeStyle = 'rgba(52,152,219,0.4)'; ctx.lineWidth = 2;
@@ -577,24 +557,20 @@ function drawRefraction(ctx, W, H, i_deg, r_deg, n1, n2) {
   ctx.fillStyle = '#7cb9ff'; ctx.font = '11px monospace'; ctx.textAlign = 'right';
   ctx.fillText('n₁ = '+n1.toFixed(2)+' (không khí)', W-10, midY-10);
   ctx.fillStyle = '#4fc3f7'; ctx.fillText('n₂ = '+n2.toFixed(2), W-10, midY+20);
-  // Normal
   ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.setLineDash([6,6]);
   ctx.beginPath(); ctx.moveTo(midX, midY-120); ctx.lineTo(midX, midY+120); ctx.stroke();
   ctx.setLineDash([]);
-  // Incident ray
   const iX = midX - Math.sin(iRad)*150, iY = midY - Math.cos(iRad)*150;
   ctx.strokeStyle = '#ffe082'; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = '#ffe082';
   ctx.beginPath(); ctx.moveTo(iX, iY); ctx.lineTo(midX, midY); ctx.stroke();
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#ffe082'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
   ctx.fillText('i = '+i_deg+'°', iX+30, iY+20);
-  // Refracted ray
   const rX = midX + Math.sin(rRad)*150, rY = midY + Math.cos(rRad)*150;
   ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = '#2ecc71';
   ctx.beginPath(); ctx.moveTo(midX, midY); ctx.lineTo(rX, rY); ctx.stroke();
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#2ecc71'; ctx.fillText('r = '+r_deg.toFixed(1)+'°', rX-30, rY-20);
-  // Reflected ray
   const refX = midX + Math.sin(iRad)*100, refY = midY - Math.cos(iRad)*100;
   ctx.strokeStyle = 'rgba(255,224,130,0.4)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
   ctx.beginPath(); ctx.moveTo(midX, midY); ctx.lineTo(refX, refY); ctx.stroke();
@@ -609,7 +585,6 @@ function drawInterference(ctx, W, H) {
   const slit2 = { x: cx+60, y: cy };
   ctx.fillStyle = '#aac4e6'; ctx.font = '12px Space Mono,monospace'; ctx.textAlign = 'left';
   ctx.fillText('Giao thoa ánh sáng – vân sáng/tối', 10, 20);
-  // Draw interference pattern on screen
   for (let x = 0; x < W; x++) {
     for (let y = 0; y < H; y++) {
       const d1 = Math.sqrt((x-slit1.x)**2 + (y-slit1.y)**2);
@@ -623,7 +598,6 @@ function drawInterference(ctx, W, H) {
       }
     }
   }
-  // Slits
   ctx.fillStyle = '#fff';
   ctx.beginPath(); ctx.arc(slit1.x, slit1.y, 5, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(slit2.x, slit2.y, 5, 0, Math.PI*2); ctx.fill();
@@ -634,9 +608,7 @@ function drawInterference(ctx, W, H) {
   ctx.fillText('Vân sáng: δ=kλ', W*0.8, H-20);
 }
 
-function resetOptics() { runOptics(); }
-
-/* ==================== CIRCUIT ==================== */
+/* ==================== CIRCUIT (number inputs) ==================== */
 let circuitClosed = false;
 
 function setSwitch(closed) {
@@ -691,20 +663,16 @@ function drawCircuit(closed, I, E) {
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
     ctx.shadowBlur = 0;
   }
+  drawWire(mx, my, mx+bw, my);
+  drawWire(mx+bw, my, mx+bw, my+bh);
+  drawWire(mx+bw, my+bh, mx, my+bh);
+  drawWire(mx, my+bh, mx, my);
 
-  // Main rect circuit
-  drawWire(mx, my, mx+bw, my);       // top
-  drawWire(mx+bw, my, mx+bw, my+bh); // right
-  drawWire(mx+bw, my+bh, mx, my+bh); // bottom
-  drawWire(mx, my+bh, mx, my);       // left
-
-  // Battery (left side)
   const batY = my + bh*0.5;
   ctx.fillStyle = '#263238';
   ctx.fillRect(mx-18, batY-35, 36, 70);
   ctx.strokeStyle = '#aac4e6'; ctx.lineWidth = 2;
   ctx.strokeRect(mx-18, batY-35, 36, 70);
-  // Battery poles
   for (let i = 0; i < 4; i++) {
     ctx.fillStyle = i%2===0 ? '#e74c3c' : '#2196f3';
     ctx.fillRect(mx-10, batY-25+i*14, 20, 6);
@@ -713,7 +681,6 @@ function drawCircuit(closed, I, E) {
   ctx.fillText('E='+document.getElementById('circuit-emf').value+'V', mx, batY+48);
   ctx.fillText('+', mx, batY-38); ctx.fillText('–', mx, batY+42);
 
-  // Switch K (top left)
   const swX = mx+80, swY = my;
   ctx.fillStyle = '#263238'; ctx.fillRect(swX-20, swY-16, 40, 32);
   ctx.strokeStyle = '#aac4e6'; ctx.lineWidth = 2; ctx.strokeRect(swX-20, swY-16, 40, 32);
@@ -730,7 +697,6 @@ function drawCircuit(closed, I, E) {
   ctx.fillText('K', swX, swY-20);
   ctx.fillText(closed ? '(đóng)' : '(mở)', swX, swY+30);
 
-  // Ammeter (top center)
   const amX = mx+bw*0.45, amY = my;
   ctx.strokeStyle = '#aac4e6'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(amX, amY, 18, 0, Math.PI*2); ctx.stroke();
@@ -744,7 +710,6 @@ function drawCircuit(closed, I, E) {
     ctx.fillText(I.toFixed(2)+'A', amX, amY+30);
   }
 
-  // Voltmeter (right side)
   const vmX = mx+bw, vmY = my+bh*0.5;
   ctx.strokeStyle = '#aac4e6'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(vmX, vmY, 18, 0, Math.PI*2); ctx.stroke();
@@ -759,7 +724,6 @@ function drawCircuit(closed, I, E) {
     ctx.fillText((I*RL).toFixed(2)+'V', vmX+35, vmY+10);
   }
 
-  // R1 (top right)
   const r1X = mx+bw*0.7, r1Y = my;
   ctx.fillStyle = '#f39c12';
   ctx.fillRect(r1X-22, r1Y-10, 44, 20);
@@ -767,7 +731,6 @@ function drawCircuit(closed, I, E) {
   ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
   ctx.fillText('R₁='+document.getElementById('circuit-r1').value+'Ω', r1X, r1Y+4);
 
-  // R2 (bottom)
   const r2X = mx+bw*0.5, r2Y = my+bh;
   ctx.fillStyle = '#9c27b0';
   ctx.fillRect(r2X-22, r2Y-10, 44, 20);
@@ -775,9 +738,8 @@ function drawCircuit(closed, I, E) {
   ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
   ctx.fillText('R₂='+document.getElementById('circuit-r2').value+'Ω', r2X, r2Y+4);
 
-  // Lamp (bottom left)
   const lampX = mx+bw*0.2, lampY = my+bh;
-  const lampBrightness = closed && I > 0 ? Math.min(I/3, 1) : 0;
+  const lampBrightness = closed && I > 0 ? Math.min(I/10, 1) : 0;
   ctx.strokeStyle = closed && lampBrightness > 0.1 ? `rgba(255,235,59,${lampBrightness})` : '#445';
   if (closed && lampBrightness > 0) { ctx.shadowBlur = 20*lampBrightness; ctx.shadowColor = '#ffe082'; }
   ctx.lineWidth = 2;
@@ -791,7 +753,6 @@ function drawCircuit(closed, I, E) {
   ctx.fillText('Đèn', lampX, lampY-20);
   ctx.fillText(document.getElementById('circuit-lamp').value+'Ω', lampX, lampY+28);
 
-  // Electron flow animation hint
   if (closed) {
     ctx.fillStyle = '#4caf50'; ctx.font = 'bold 12px Nunito,sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('⚡ Mạch đang hoạt động – I = '+I.toFixed(2)+' A', W/2, H-12);
@@ -801,18 +762,18 @@ function drawCircuit(closed, I, E) {
   }
 }
 
-/* ==================== CHEMISTRY ==================== */
+/* ==================== CHEMISTRY (giữ nguyên, chỉ số lớn) ==================== */
 const chemicals = [
-  { id:'HCl',  name:'HCl',    type:'acid',    pH:1.0,  color:'#ff8a65cc', typeLabel:'Acid mạnh',  formula:'HCl → H⁺ + Cl⁻' },
-  { id:'H2SO4',name:'H₂SO₄', type:'acid',    pH:0.5,  color:'#ff7043cc', typeLabel:'Acid mạnh',  formula:'H₂SO₄ → 2H⁺ + SO₄²⁻' },
-  { id:'CH3COOH',name:'CH₃COOH',type:'acid', pH:3.0,  color:'#ffcc80cc', typeLabel:'Acid yếu',   formula:'CH₃COOH ⇌ CH₃COO⁻ + H⁺' },
-  { id:'HNO3', name:'HNO₃',  type:'acid',    pH:1.2,  color:'#ffb74dcc', typeLabel:'Acid mạnh',  formula:'HNO₃ → H⁺ + NO₃⁻' },
-  { id:'NaOH', name:'NaOH',  type:'base',    pH:13.0, color:'#4fc3f7cc', typeLabel:'Base mạnh',  formula:'NaOH → Na⁺ + OH⁻' },
-  { id:'KOH',  name:'KOH',   type:'base',    pH:13.0, color:'#29b6f6cc', typeLabel:'Base mạnh',  formula:'KOH → K⁺ + OH⁻' },
-  { id:'CuOH2',name:'Cu(OH)₂',type:'base',  pH:9.0,  color:'#80deea cc', typeLabel:'Base yếu',   formula:'Cu(OH)₂ ⇌ Cu²⁺ + 2OH⁻' },
-  { id:'NH3',  name:'NH₃',   type:'base',    pH:11.0, color:'#80cbc4cc', typeLabel:'Base yếu',   formula:'NH₃ + H₂O ⇌ NH₄⁺ + OH⁻' },
-  { id:'H2O',  name:'H₂O',   type:'neutral', pH:7.0,  color:'#b2ebf2cc', typeLabel:'Trung tính', formula:'H₂O – nước tinh khiết' },
-  { id:'NaCl', name:'NaCl',  type:'neutral', pH:7.0,  color:'#e0e0e0cc', typeLabel:'Muối',       formula:'NaCl – muối ăn' },
+  { id:'HCl',  name:'HCl',    type:'acid',    strength:'strong', pH:1.0,  pKa: -6,   pKb: null, color:'#ff8a65cc', typeLabel:'Acid mạnh',  formula:'HCl → H⁺ + Cl⁻' },
+  { id:'H2SO4',name:'H₂SO₄', type:'acid',    strength:'strong', pH:0.5,  pKa: -3,   pKb: null, color:'#ff7043cc', typeLabel:'Acid mạnh',  formula:'H₂SO₄ → 2H⁺ + SO₄²⁻' },
+  { id:'CH3COOH',name:'CH₃COOH',type:'acid', strength:'weak',   pH:3.0,  pKa: 4.76, pKb: null, color:'#ffcc80cc', typeLabel:'Acid yếu',   formula:'CH₃COOH ⇌ CH₃COO⁻ + H⁺' },
+  { id:'HNO3', name:'HNO₃',  type:'acid',    strength:'strong', pH:1.2,  pKa: -1,   pKb: null, color:'#ffb74dcc', typeLabel:'Acid mạnh',  formula:'HNO₃ → H⁺ + NO₃⁻' },
+  { id:'NaOH', name:'NaOH',  type:'base',    strength:'strong', pH:13.0, pKa: null, pKb: 0,   color:'#4fc3f7cc', typeLabel:'Base mạnh',  formula:'NaOH → Na⁺ + OH⁻' },
+  { id:'KOH',  name:'KOH',   type:'base',    strength:'strong', pH:13.0, pKa: null, pKb: 0,   color:'#29b6f6cc', typeLabel:'Base mạnh',  formula:'KOH → K⁺ + OH⁻' },
+  { id:'CuOH2',name:'Cu(OH)₂',type:'base',  strength:'weak',   pH:9.0,  pKa: null, pKb: 6.5, color:'#80deea cc', typeLabel:'Base yếu',   formula:'Cu(OH)₂ ⇌ Cu²⁺ + 2OH⁻' },
+  { id:'NH3',  name:'NH₃',   type:'base',    strength:'weak',   pH:11.0, pKa: null, pKb: 4.75,color:'#80cbc4cc', typeLabel:'Base yếu',   formula:'NH₃ + H₂O ⇌ NH₄⁺ + OH⁻' },
+  { id:'H2O',  name:'H₂O',   type:'neutral', strength:'neutral',pH:7.0,  pKa: null, pKb: null,color:'#b2ebf2cc', typeLabel:'Trung tính', formula:'H₂O – nước tinh khiết' },
+  { id:'NaCl', name:'NaCl',  type:'neutral', strength:'neutral',pH:7.0,  pKa: null, pKb: null,color:'#e0e0e0cc', typeLabel:'Muối',       formula:'NaCl – muối ăn' },
 ];
 
 let selectedA = null, selectedB = null;
@@ -881,41 +842,150 @@ function updateLitmus() {
   else { paper.style.background = '#9c27b0'; document.getElementById('litmus-text').textContent = 'Tím'; result.textContent = `pH = ${pH} → Trung tính ⚪`; }
 }
 
+function computePH(chemical, concentration) {
+  if (!chemical || chemical.type === 'neutral') return 7.0;
+  if (chemical.type === 'acid') {
+    if (chemical.strength === 'strong') {
+      let h = concentration;
+      if (chemical.id === 'H2SO4') h = 2 * concentration;
+      return h > 0 ? -Math.log10(h) : 7;
+    } else {
+      const h = Math.sqrt(concentration * Math.pow(10, -chemical.pKa));
+      return -Math.log10(h);
+    }
+  } else {
+    if (chemical.strength === 'strong') {
+      let oh = concentration;
+      const poh = -Math.log10(oh);
+      return 14 - poh;
+    } else {
+      const oh = Math.sqrt(concentration * Math.pow(10, -chemical.pKb));
+      const poh = -Math.log10(oh);
+      return 14 - poh;
+    }
+  }
+}
+
 function mixChemicals() {
   if (!selectedA || !selectedB) { alert('Hãy chọn 2 chất từ kệ để phản ứng!'); return; }
-  const pHmix = (selectedA.pH + selectedB.pH) / 2;
-  let color, env;
-  if (pHmix < 6) { color = '#ff8a65cc'; env = '⚡ Acid mạnh'; }
-  else if (pHmix < 7) { color = '#ffcc80cc'; env = '〰 Acid yếu'; }
-  else if (Math.abs(pHmix - 7) < 0.5) { color = '#b2ebf2cc'; env = '✓ Trung tính'; }
-  else if (pHmix < 9) { color = '#80cbc4cc'; env = '〰 Base yếu'; }
-  else { color = '#4fc3f7cc'; env = '⚡ Base mạnh'; }
+  const concA = parseFloat(document.getElementById('conc-A').value) || 0.1;
+  const concB = parseFloat(document.getElementById('conc-B').value) || 0.1;
+  const volA = parseFloat(document.getElementById('vol-A').value) || 1.0;
+  const volB = volA; // giả sử cùng thể tích
+  const volTotal = volA + volB;
+  
+  let finalpH = 7.0;
+  let env = 'Trung tính';
+  let description = '';
+
+  if ((selectedA.type === 'acid' && selectedB.type === 'base') || (selectedA.type === 'base' && selectedB.type === 'acid')) {
+    const acid = selectedA.type === 'acid' ? selectedA : selectedB;
+    const base = selectedA.type === 'base' ? selectedA : selectedB;
+    const concAcid = selectedA.type === 'acid' ? concA : concB;
+    const concBase = selectedA.type === 'base' ? concA : concB;
+    const volAcid = selectedA.type === 'acid' ? volA : volB;
+    const volBase = selectedA.type === 'base' ? volA : volB;
+    
+    let nH = 0, nOH = 0;
+    if (acid.strength === 'strong') {
+      nH = concAcid * volAcid;
+      if (acid.id === 'H2SO4') nH *= 2;
+    } else {
+      nH = concAcid * volAcid;
+    }
+    if (base.strength === 'strong') {
+      nOH = concBase * volBase;
+    } else {
+      nOH = concBase * volBase;
+    }
+    
+    const nDiff = Math.abs(nH - nOH);
+    if (nDiff < 1e-6) {
+      finalpH = 7.0;
+      env = 'Trung tính (phản ứng trung hòa)';
+      description = 'Acid và base vừa đủ → muối trung hòa + nước';
+    } else if (nH > nOH) {
+      const h_conc = (nH - nOH) / volTotal;
+      finalpH = -Math.log10(h_conc);
+      env = 'Acid';
+      description = `Acid ${(nH-nOH).toFixed(4)} mol → pH = ${finalpH.toFixed(2)}`;
+    } else {
+      const oh_conc = (nOH - nH) / volTotal;
+      finalpH = 14 - (-Math.log10(oh_conc));
+      env = 'Kiềm';
+      description = `Kiềm ${(nOH-nH).toFixed(4)} mol → pH = ${finalpH.toFixed(2)}`;
+    }
+  } 
+  else if (selectedA.type === 'acid' && selectedB.type === 'acid') {
+    const pH1 = computePH(selectedA, concA);
+    const pH2 = computePH(selectedB, concB);
+    const h1 = Math.pow(10, -pH1);
+    const h2 = Math.pow(10, -pH2);
+    const h_avg = (h1 * volA + h2 * volB) / volTotal;
+    finalpH = -Math.log10(h_avg);
+    env = 'Hỗn hợp acid';
+    description = `pH trung bình theo nồng độ H⁺ = ${finalpH.toFixed(2)}`;
+  } 
+  else if (selectedA.type === 'base' && selectedB.type === 'base') {
+    const pH1 = computePH(selectedA, concA);
+    const pH2 = computePH(selectedB, concB);
+    const oh1 = Math.pow(10, -(14 - pH1));
+    const oh2 = Math.pow(10, -(14 - pH2));
+    const oh_avg = (oh1 * volA + oh2 * volB) / volTotal;
+    finalpH = 14 - (-Math.log10(oh_avg));
+    env = 'Hỗn hợp base';
+    description = `pH trung bình theo nồng độ OH⁻ = ${finalpH.toFixed(2)}`;
+  }
+  else {
+    const active = selectedA.type !== 'neutral' ? selectedA : selectedB;
+    const concActive = selectedA.type !== 'neutral' ? concA : concB;
+    finalpH = computePH(active, concActive);
+    env = active.type === 'acid' ? 'Môi trường acid' : (active.type === 'base' ? 'Môi trường base' : 'Trung tính');
+    description = `Chỉ có ${active.name} ảnh hưởng pH`;
+  }
+
+  finalpH = Math.min(14, Math.max(0, finalpH));
+  
+  document.getElementById('ph-val').textContent = finalpH.toFixed(2);
+  document.getElementById('chem-ph-val').innerHTML = finalpH.toFixed(2);
+  document.getElementById('chem-env').textContent = env;
   document.getElementById('liq-acid').style.height = '20%';
   document.getElementById('liq-base').style.height = '20%';
   document.getElementById('liq-result').style.height = '70%';
+  let color;
+  if (finalpH < 6) color = '#ff8a65cc';
+  else if (finalpH < 7) color = '#ffcc80cc';
+  else if (finalpH > 8) color = '#4fc3f7cc';
+  else if (finalpH > 7) color = '#80cbc4cc';
+  else color = '#b2ebf2cc';
   document.getElementById('liq-result').style.background = color;
-  document.getElementById('ph-display').style.display = 'block';
-  document.getElementById('ph-val').textContent = pHmix.toFixed(1);
-  document.getElementById('chem-ph-val').innerHTML = pHmix.toFixed(1);
-  document.getElementById('chem-env').textContent = env;
-  // Show equation
+  document.getElementById('ph-display').style.display = 'flex';
+  
+  const paper = document.getElementById('litmus-paper');
+  const resultSpan = document.getElementById('litmus-result');
+  if (finalpH < 7) { paper.style.background = '#e74c3c'; document.getElementById('litmus-text').textContent = 'Đỏ'; resultSpan.textContent = `pH = ${finalpH.toFixed(2)} → Môi trường acid 🔴`; }
+  else if (finalpH > 7) { paper.style.background = '#1565c0'; document.getElementById('litmus-text').textContent = 'Xanh'; resultSpan.textContent = `pH = ${finalpH.toFixed(2)} → Môi trường base 🔵`; }
+  else { paper.style.background = '#9c27b0'; document.getElementById('litmus-text').textContent = 'Tím'; resultSpan.textContent = `pH = 7.00 → Trung tính ⚪`; }
+  
   const eqDiv = document.getElementById('reaction-equation');
   const eqText = document.getElementById('reaction-text');
   const eqNote = document.getElementById('reaction-note');
   eqDiv.style.display = 'block';
-  // Generate reaction
   if (selectedA.type === 'acid' && selectedB.type === 'base') {
     eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Muối + H₂O';
-    eqNote.textContent = 'Phản ứng trung hòa. pH = '+pHmix.toFixed(1);
+    eqNote.textContent = `Phản ứng trung hòa. ${description}`;
+  } else if (selectedA.type === 'base' && selectedB.type === 'acid') {
+    eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Muối + H₂O';
+    eqNote.textContent = `Phản ứng trung hòa. ${description}`;
   } else if (selectedA.type === 'acid' && selectedB.type === 'acid') {
-    eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Không phản ứng (cùng loại acid)';
-    eqNote.textContent = 'Hai acid không tác dụng với nhau. pH = '+pHmix.toFixed(1);
+    eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Hỗn hợp acid';
+    eqNote.textContent = description;
   } else if (selectedA.type === 'base' && selectedB.type === 'base') {
-    eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Không phản ứng (cùng loại base)';
-    eqNote.textContent = 'Hai base không tác dụng với nhau. pH = '+pHmix.toFixed(1);
+    eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Hỗn hợp base';
+    eqNote.textContent = description;
   } else {
-    eqText.textContent = selectedA.name + ' + ' + selectedB.name + ' → Hỗn hợp';
-    eqNote.textContent = 'pH = '+pHmix.toFixed(1);
+    eqText.textContent = selectedA.name + ' + ' + selectedB.name;
+    eqNote.textContent = description;
   }
 }
 
@@ -939,21 +1009,23 @@ function resetChem() {
   document.getElementById('reaction-equation').style.display = 'none';
   document.getElementById('beaker-A-label').textContent = 'Chất A';
   document.getElementById('beaker-B-label').textContent = 'Chất B';
+  document.getElementById('conc-A').value = '0.1';
+  document.getElementById('conc-B').value = '0.1';
+  document.getElementById('vol-A').value = '1.0';
   updateLitmus();
 }
 
-/* ==================== DNA ==================== */
+/* ==================== DNA (giữ nguyên) ==================== */
 const DNA_PAIRS = { A:'T', T:'A', G:'C', C:'G' };
 const BASE_COLORS = { A:'#e74c3c', T:'#3498db', G:'#2ecc71', C:'#f39c12' };
 const STRAND_LENGTH = 10;
-let strand1 = []; // given (template)
-let strand2 = []; // user fills this
+let strand1 = [];
+let strand2 = [];
 
 let draggedBase = null;
 function dragBase(e, base) { draggedBase = base; e.dataTransfer.setData('text/plain', base); }
 
 function initDNA() {
-  // Generate random template strand
   const bases = ['A','T','G','C'];
   strand1 = Array.from({length: STRAND_LENGTH}, () => bases[Math.floor(Math.random()*4)]);
   strand2 = Array(STRAND_LENGTH).fill(null);
@@ -966,7 +1038,6 @@ function renderDNA() {
   const wrapper = document.createElement('div');
   wrapper.className = 'dna-strand-container';
 
-  // Strand 1 (template – read only)
   const row1 = document.createElement('div');
   row1.className = 'dna-strand-row';
   const label1 = document.createElement('div');
@@ -983,7 +1054,6 @@ function renderDNA() {
   });
   wrapper.appendChild(row1);
 
-  // Bonds row
   const bondsRow = document.createElement('div');
   bondsRow.className = 'dna-bonds-row';
   strand1.forEach((base, i) => {
@@ -994,7 +1064,6 @@ function renderDNA() {
   });
   wrapper.appendChild(bondsRow);
 
-  // Strand 2 (user input)
   const row2 = document.createElement('div');
   row2.className = 'dna-strand-row';
   const label2 = document.createElement('div');
@@ -1047,7 +1116,6 @@ function checkDNA() {
   } else {
     scoreDiv.style.color = '#e74c3c';
     scoreDiv.textContent = `❌ ${score}/${total} đúng. Kiểm tra lại: A↔T, G↔C`;
-    // Highlight wrong
     const slots = document.querySelectorAll('#dna-strands .dna-strand-row:last-child .dna-base-slot');
     slots.forEach((sl, i) => {
       sl.classList.remove('correct','wrong');
@@ -1070,23 +1138,16 @@ document.getElementById('feedbackModal').addEventListener('click', e => { if (e.
 
 /* ==================== INIT ==================== */
 window.addEventListener('load', () => {
-  // Motion init
   mV0 = 10; mA = 2; mTmax = 10;
   mSmax = Math.max(mV0*mTmax + 0.5*mA*mTmax*mTmax, 1);
   updateInputFields();
   drawMotionFrame(mV0, 0);
   drawGraph();
-  // Force init
   updateForceDisplay();
   drawForceScene(0);
-  // Circuit init
   drawCircuit(false, 0, 12);
-  // Wave init
   drawWaveFrame(0); updateWaveData();
-  // Chem init
   initShelf();
-  // DNA init
   initDNA();
-  // Optics init
   runOptics();
 });
