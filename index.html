@@ -56,6 +56,7 @@
       </div>
       <div class="subject-items">
         <div class="nav-item" onclick="showPage('acidbase')">🧪 Acid và Base</div>
+        <div class="nav-item" onclick="showPage('periodic')">📊 Bảng tuần hoàn</div>
       </div>
     </div>
 
@@ -118,6 +119,11 @@
           <div class="card-icon">🧪</div>
           <h3>Acid và Base</h3>
           <p>Kệ hóa chất, giấy quỳ tím, phản ứng acid–base</p>
+        </div>
+        <div class="card chem-card" onclick="showPage('periodic')">
+          <div class="card-icon">📊</div>
+          <h3>Bảng tuần hoàn</h3>
+          <p>Tra cứu 118 nguyên tố hóa học</p>
         </div>
       </div>
 
@@ -589,6 +595,51 @@
             <li>Base mạnh: pH = 14 + log(C<sub>b</sub>)</li>
             <li>Base yếu: pH = 14 - ½(pK<sub>b</sub> - log C<sub>b</sub>)</li>
             <li>Trộn acid + base: chất dư quyết định pH</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== HÓA HỌC: BẢNG TUẦN HOÀN ==================== -->
+    <div class="page" id="page-periodic">
+      <div class="page-header chem-header">
+        <span class="page-badge chem-badge">⚗ Hóa Học</span>
+        <h2>Bảng Tuần Hoàn Các Nguyên Tố Hóa Học</h2>
+      </div>
+      <div class="sim-container" style="overflow-x: auto;">
+        <div class="sim-toolbar">
+          <span class="sim-title">// BẢNG TUẦN HOÀN</span>
+          <button class="btn btn-chem" onclick="resetPeriodicHighlight()">↺ BỎ CHỌN</button>
+        </div>
+        <div class="periodic-table" id="periodic-table-container" style="padding: 20px; background: #0d1b2a; min-width: 800px;">
+          <!-- Bảng sẽ được render bằng JS -->
+        </div>
+        <div class="element-detail" id="element-detail" style="display: none; margin: 16px; padding: 16px; background: #1a2640; border-radius: 12px; color: #fff;">
+          <h3 id="element-name" style="margin: 0 0 8px;">—</h3>
+          <div id="element-info" style="font-family: monospace; font-size: 14px;"></div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block">
+          <h4>Chú thích màu sắc</h4>
+          <ul>
+            <li><span style="background:#e74c3c; display:inline-block; width:16px; height:16px; border-radius:4px;"></span> Kim loại kiềm</li>
+            <li><span style="background:#f39c12; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Kim loại kiềm thổ</li>
+            <li><span style="background:#2ecc71; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Kim loại chuyển tiếp</li>
+            <li><span style="background:#1abc9c; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Kim loại hậu chuyển tiếp</li>
+            <li><span style="background:#9b59b6; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Á kim</li>
+            <li><span style="background:#3498db; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Phi kim</li>
+            <li><span style="background:#e67e22; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Halogen</li>
+            <li><span style="background:#1f618d; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Khí hiếm</li>
+            <li><span style="background:#95a5a6; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Lanthanide/Actinide</li>
+          </ul>
+        </div>
+        <div class="info-block">
+          <h4>Hướng dẫn</h4>
+          <ul>
+            <li>Click vào ô nguyên tố để xem chi tiết</li>
+            <li>Màu sắc phân loại theo nhóm</li>
+            <li>Bao gồm 118 nguyên tố</li>
           </ul>
         </div>
       </div>
