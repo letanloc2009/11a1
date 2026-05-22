@@ -708,45 +708,38 @@
         <span class="page-badge chem-badge">⚗ Hóa Học</span>
         <h2>Bảng Tuần Hoàn Các Nguyên Tố Hóa Học</h2>
       </div>
-      <div class="sim-container" style="overflow-x: auto;">
+      
+      <div class="periodic-container">
         <div class="sim-toolbar">
           <span class="sim-title">// BẢNG TUẦN HOÀN</span>
-          <button class="btn btn-chem" onclick="resetPeriodicHighlight()">↺ BỎ CHỌN</button>
+          <button class="btn btn-chem" onclick="resetPeriodicHighlight()">↺ ĐÓNG CHI TIẾT</button>
         </div>
-        <div class="periodic-table" id="periodic-table-container" style="padding: 20px; background: #0d1b2a; min-width: 800px;">
-          <!-- Bảng sẽ được render bằng JS -->
-        </div>
-        <div class="element-detail" id="element-detail" style="display: none; margin: 16px; padding: 16px; background: #1a2640; border-radius: 12px; color: #fff;">
-          <h3 id="element-name" style="margin: 0 0 8px;">—</h3>
-          <div id="element-info" style="font-family: monospace; font-size: 14px;"></div>
-        </div>
-      </div>
-      <div class="info-grid">
-        <div class="info-block">
-          <h4>Chú thích màu sắc</h4>
-          <ul>
-            <li><span style="background:#e74c3c; display:inline-block; width:16px; height:16px; border-radius:4px;"></span> Kim loại kiềm</li>
-            <li><span style="background:#f39c12; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Kim loại kiềm thổ</li>
-            <li><span style="background:#2ecc71; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Kim loại chuyển tiếp</li>
-            <li><span style="background:#1abc9c; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Kim loại hậu chuyển tiếp</li>
-            <li><span style="background:#9b59b6; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Á kim</li>
-            <li><span style="background:#3498db; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Phi kim</li>
-            <li><span style="background:#e67e22; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Halogen</li>
-            <li><span style="background:#1f618d; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Khí hiếm</li>
-            <li><span style="background:#95a5a6; width:16px; height:16px; display:inline-block; border-radius:4px;"></span> Lanthanide/Actinide</li>
-          </ul>
-        </div>
-        <div class="info-block">
-          <h4>Hướng dẫn</h4>
-          <ul>
-            <li>Click vào ô nguyên tố để xem chi tiết</li>
-            <li>Màu sắc phân loại theo nhóm</li>
-            <li>Bao gồm 118 nguyên tố</li>
-          </ul>
+        
+        <div class="periodic-grid" id="periodic-grid">
+	  </div>
+	  
+        <div class="element-detail" id="element-detail">
+          <div class="detail-placeholder">
+            <p>Bấm vào một nguyên tố bất kỳ trong bảng để xem cấu hình chi tiết và các thông số hóa học.</p>
+          </div>
         </div>
       </div>
     </div>
-
+	
+	<div class="periodic-legend">
+  <div class="legend-item"><span class="legend-box alkali-metal"></span> Kim loại kiềm</div>
+  <div class="legend-item"><span class="legend-box alkaline-earth"></span> Kiềm thổ</div>
+  <div class="legend-item"><span class="legend-box transition-metal"></span> Chuyển tiếp</div>
+  <div class="legend-item"><span class="legend-box post-transition"></span> Hậu chuyển tiếp</div>
+  <div class="legend-item"><span class="legend-box metalloid"></span> Á kim</div>
+  <div class="legend-item"><span class="legend-box nonmetal"></span> Phi kim</div>
+  <div class="legend-item"><span class="legend-box halogen"></span> Halogen</div>
+  <div class="legend-item"><span class="legend-box noble-gas"></span> Khí hiếm</div>
+  <div class="legend-item"><span class="legend-box lanthanide"></span> Lanthanide</div>
+  <div class="legend-item"><span class="legend-box actinide"></span> Actinide</div>
+</div>
+        
+	
     <!-- ==================== SINH HỌC: DNA ==================== -->
     <div class="page" id="page-dna">
       <div class="page-header bio-header">
