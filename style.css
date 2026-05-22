@@ -922,3 +922,251 @@ main {
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(39, 174, 96, 0.35);
 }
+
+/* ==================== BẢNG TUẦN HOÀN - DARK MODE (THU GỌN) ==================== */
+
+/* Container chính – nền đen, cuộn ngang khi cần */
+.periodic-container {
+  background: #0a0a0a;
+  border-radius: 16px;
+  padding: 12px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Lưới bảng – tự động co giãn, vừa màn hình desktop */
+#periodic-grid {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(52px, 1fr));
+  gap: 6px;
+  background: #0a0a0a;
+  min-width: 980px; /* đảm bảo đủ rộng để hiện 18 cột, nhưng không quá lớn */
+  margin: 0 auto;
+}
+
+/* Ô nguyên tố – kích thước gọn, dễ nhìn */
+.element-cell {
+  background: #1a1a2a;
+  border-radius: 10px;
+  padding: 6px 2px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+  border: 1px solid #2c2c3a;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.element-cell:not(.empty):hover {
+  transform: scale(1.05);
+  background: #2a2a3a;
+  z-index: 2;
+}
+.element-cell.empty {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+/* Số hiệu nguyên tử */
+.element-cell .atomic-num {
+  font-size: 9px;
+  text-align: left;
+  margin-left: 4px;
+  font-weight: 600;
+  color: #cccccc;
+}
+
+/* Ký hiệu hóa học */
+.element-cell .symbol {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 2px 0;
+  letter-spacing: -0.5px;
+}
+
+/* Tên nguyên tố (ẩn trên mobile để tiết kiệm diện tích) */
+.element-cell .elem-name {
+  font-size: 7px;
+  color: #bbbbbb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 2px;
+}
+
+/* ===== MÀU SẮC CÁC NHÓM (CHỮ ĐEN NỀN SÁNG, CHỮ TRẮNG NỀN TỐI) ===== */
+.alkali-metal {
+  background: linear-gradient(135deg, #ffb3ba, #ff8c94);
+  color: #000;
+}
+.alkali-metal .symbol, .alkali-metal .atomic-num, .alkali-metal .elem-name { color: #000; }
+
+.alkaline-earth {
+  background: linear-gradient(135deg, #ffe0b3, #ffcc80);
+  color: #000;
+}
+.alkaline-earth .symbol, .alkaline-earth .atomic-num, .alkaline-earth .elem-name { color: #000; }
+
+.transition-metal {
+  background: linear-gradient(135deg, #1e3a8a, #1e40af);
+  color: #fff;
+}
+.transition-metal .symbol, .transition-metal .atomic-num, .transition-metal .elem-name { color: #fff; }
+
+.post-transition {
+  background: linear-gradient(135deg, #065f46, #047857);
+  color: #fff;
+}
+.post-transition .symbol, .post-transition .atomic-num, .post-transition .elem-name { color: #fff; }
+
+.metalloid {
+  background: linear-gradient(135deg, #374151, #4b5563);
+  color: #fff;
+}
+.metalloid .symbol, .metalloid .atomic-num, .metalloid .elem-name { color: #fff; }
+
+.nonmetal {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #000;
+}
+.nonmetal .symbol, .nonmetal .atomic-num, .nonmetal .elem-name { color: #000; }
+
+.halogen {
+  background: linear-gradient(135deg, #fed7aa, #fdba74);
+  color: #000;
+}
+.halogen .symbol, .halogen .atomic-num, .halogen .elem-name { color: #000; }
+
+.noble-gas {
+  background: linear-gradient(135deg, #4c1d95, #5b21b6);
+  color: #fff;
+}
+.noble-gas .symbol, .noble-gas .atomic-num, .noble-gas .elem-name { color: #fff; }
+
+.lanthanide {
+  background: linear-gradient(135deg, #831843, #9d174d);
+  color: #fff;
+}
+.lanthanide .symbol, .lanthanide .atomic-num, .lanthanide .elem-name { color: #fff; }
+
+.actinide {
+  background: linear-gradient(135deg, #7f1a1f, #991b1b);
+  color: #fff;
+}
+.actinide .symbol, .actinide .atomic-num, .actinide .elem-name { color: #fff; }
+
+/* ===== CHI TIẾT NGUYÊN TỐ (NỀN TỐI, GỌN NHẸ) ===== */
+.element-detail {
+  background: #0f172a;
+  border-radius: 16px;
+  margin: 16px 8px;
+  padding: 12px 16px;
+  border-left: 4px solid #2ecc71;
+  color: #e2e8f0;
+  display: none;
+}
+.element-detail.open { display: block; }
+.element-detail .detail-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 1px solid #2c2c3a;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.element-detail .detail-symbol {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffd966;
+}
+.element-detail .detail-name {
+  font-size: 16px;
+  color: #cccccc;
+}
+.element-detail .detail-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.element-detail .detail-body strong { color: #90ee90; }
+.element-detail code {
+  background: #1e293b;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 11px;
+}
+.detail-placeholder {
+  text-align: center;
+  padding: 20px;
+  color: #aaaaaa;
+  font-style: italic;
+}
+
+/* ===== CHÚ THÍCH (LEGEND) GỌN NHẸ ===== */
+.periodic-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  background: #111827;
+  padding: 12px;
+  border-radius: 20px;
+  margin: 16px 8px 8px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #e2e8f0;
+}
+.legend-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+/* Màu sắc cho các ô trong legend (dùng lại class của nhóm) */
+.legend-box.alkali-metal { background: linear-gradient(135deg, #ffb3ba, #ff8c94); }
+.legend-box.alkaline-earth { background: linear-gradient(135deg, #ffe0b3, #ffcc80); }
+.legend-box.transition-metal { background: linear-gradient(135deg, #1e3a8a, #1e40af); }
+.legend-box.post-transition { background: linear-gradient(135deg, #065f46, #047857); }
+.legend-box.metalloid { background: linear-gradient(135deg, #374151, #4b5563); }
+.legend-box.nonmetal { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+.legend-box.halogen { background: linear-gradient(135deg, #fed7aa, #fdba74); }
+.legend-box.noble-gas { background: linear-gradient(135deg, #4c1d95, #5b21b6); }
+.legend-box.lanthanide { background: linear-gradient(135deg, #831843, #9d174d); }
+.legend-box.actinide { background: linear-gradient(135deg, #7f1a1f, #991b1b); }
+
+/* ===== RESPONSIVE – ĐIỆN THOẠI ===== */
+@media (max-width: 768px) {
+  .periodic-container {
+    padding: 8px 4px;
+  }
+  #periodic-grid {
+    gap: 4px;
+    min-width: 860px; /* thu nhỏ một chút nhưng vẫn cuộn được */
+  }
+  .element-cell {
+    padding: 4px 1px;
+  }
+  .element-cell .symbol {
+    font-size: 0.85rem;
+  }
+  .element-cell .elem-name {
+    display: none; /* Ẩn tên trên mobile để ô nhỏ gọn */
+  }
+  .element-cell .atomic-num {
+    font-size: 8px;
+  }
+  .element-detail .detail-body {
+    grid-template-columns: 1fr;
+  }
+  .periodic-legend {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
+    font-size: 9px;
+  }
+}
