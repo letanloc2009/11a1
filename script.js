@@ -1597,10 +1597,12 @@ function setupCellEvents() {
     const mouseX = (e.clientX - rect.left) * scaleX;
     const mouseY = (e.clientY - rect.top) * scaleY;
     let found = null;
+    let foundArea = Infinity;
     
     for(let [key, region] of Object.entries(organelleRegions)) {
       if(mouseX >= region.x && mouseX <= region.x+region.w && mouseY >= region.y && mouseY <= region.y+region.h) {
-        found = key; break;
+        const area = region.w * region.h;
+        if(area < foundArea) { found = key; foundArea = area; }
       }
     }
     
@@ -1659,6 +1661,18 @@ function resetCellView() {
 // Thêm vào trong window load hoặc trong hàm showPage
 
 // ========== GIAO THOA YOUNG ==========
+function wavelengthToRGB(nm) {
+  let r=0,g=0,b=0;
+  if(nm>=380&&nm<440){r=(440-nm)/60;g=0;b=1;}
+  else if(nm<490){r=0;g=(nm-440)/50;b=1;}
+  else if(nm<510){r=0;g=1;b=(510-nm)/20;}
+  else if(nm<580){r=(nm-510)/70;g=1;b=0;}
+  else if(nm<645){r=1;g=(645-nm)/65;b=0;}
+  else if(nm<=780){r=1;g=0;b=0;}
+  const factor=nm<420?(0.3+0.7*(nm-380)/40):nm>700?(0.3+0.7*(780-nm)/80):1;
+  return {r:Math.round(r*factor*255),g:Math.round(g*factor*255),b:Math.round(b*factor*255)};
+}
+
 function runYoung() {
   const canvas = document.getElementById('young-canvas');
   if(!canvas) return;
@@ -1681,10 +1695,25 @@ function runYoung() {
   document.getElementById('i-val').innerHTML = i_mm.toFixed(3) + '<span class="dc-unit">mm</span>';
   
   const centerX = W/2;
-  const scale = 80 / (i_mm * 5); // vẽ 5 vân mỗi bên
+  // Scale cố định (px/mm) — KHÔNG chia cho i_mm nữa,
+  // để khi i_mm tăng (λ tăng) thì khoảng cách vân thực sự giãn ra.
+  let scale = 45; // px per mm
+  const spacing = i_mm * scale;
+  if (spacing < 14) scale = 14 / i_mm;       // tránh vân sát quá
+  if (spacing > (W/2 - 20)) scale = (W/2 - 20) / i_mm; // giữ ít nhất 1 vân mỗi bên
+
+  // Vẽ nền gradient cường độ giao thoa
+  for(let px = 0; px < W; px++) {
+    const xMm = (px - centerX) / scale;
+    const intensity = Math.cos(Math.PI * xMm / i_mm) ** 2;
+    const wavelengthColor = wavelengthToRGB(lambda_nm);
+    ctx.fillStyle = `rgba(${wavelengthColor.r},${wavelengthColor.g},${wavelengthColor.b},${intensity * 0.55})`;
+    ctx.fillRect(px, 55, 1, H - 110);
+  }
+
   ctx.strokeStyle = '#ffe082';
   ctx.lineWidth = 1;
-  ctx.textAlign = 'center'; // Căn giữa text ngay dưới đường kẻ
+  ctx.textAlign = 'center';
   for(let k = -6; k <= 6; k++) {
     let x = centerX + k * i_mm * scale;
     if(x < 0 || x > W) continue;
