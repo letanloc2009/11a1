@@ -220,51 +220,90 @@
     <div class="page" id="page-force">
       <div class="page-header physics-header">
         <span class="page-badge physics-badge">⚡ Vật Lí</span>
-        <h2>Lực</h2>
+        <h2>Lực – Đẩy &amp; Kéo Thùng Hàng</h2>
       </div>
       <div class="sim-container">
         <div class="sim-toolbar">
-          <span class="sim-title">// KÉO CO – LỰC TỔNG HỢP</span>
+          <span class="sim-title">// LỰC TỔNG HỢP – THÙNG HÀNG</span>
           <button class="btn btn-physics" id="force-btn" onclick="toggleForce()">▶ CHẠY</button>
           <button class="btn btn-secondary" onclick="resetForce()">↺ LÀM MỚI</button>
         </div>
+
+        <!-- Palette kéo nhân vật -->
+        <div class="force-palette">
+          <span class="force-palette-label">🖱 Kéo nhân vật vào vùng trái / phải để xác định lực:</span>
+          <div draggable="true" class="force-chip pull-chip" ondragstart="fDragStart(event,'pull')" title="Người kéo thùng về phía mình">🏃 Người kéo</div>
+          <div draggable="true" class="force-chip push-chip" ondragstart="fDragStart(event,'push')" title="Người đẩy thùng ra xa">💪 Người đẩy</div>
+          <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px;" onclick="clearAllForceZones()">✕ Xóa hết</button>
+        </div>
+
+        <!-- Drop zones -->
+        <div class="force-zones-row">
+          <div class="force-zone" id="force-zone-left"
+               ondragover="event.preventDefault(); this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="fDrop(event,'left')"
+               onclick="clearForceZone('left')">
+            <div id="fz-left-icon" style="font-size:22px;">❓</div>
+            <span id="fz-left-label">Thả nhân vật<br>vào đây</span>
+            <div style="font-size:10px;color:#aaa;margin-top:4px;">(click để xóa)</div>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+            <div style="text-align:center;">
+              <div style="font-size:28px;">📦</div>
+              <div style="font-size:10px;color:#7cb9ff;font-weight:700;margin-top:4px;">THÙNG<br>HÀNG</div>
+            </div>
+          </div>
+          <div class="force-zone right-zone" id="force-zone-right"
+               ondragover="event.preventDefault(); this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="fDrop(event,'right')"
+               onclick="clearForceZone('right')">
+            <div id="fz-right-icon" style="font-size:22px;">❓</div>
+            <span id="fz-right-label">Thả nhân vật<br>vào đây</span>
+            <div style="font-size:10px;color:#aaa;margin-top:4px;">(click để xóa)</div>
+          </div>
+        </div>
+
         <div class="sim-canvas" style="padding:0;background:#0d1b2a">
           <canvas id="force-canvas" width="700" height="280" style="display:block;max-width:100%;width:100%"></canvas>
         </div>
         <div class="sim-controls" id="force-inputs" style="grid-template-columns:repeat(2,1fr)">
           <div class="control-group">
-            <label>Lực Đội Trái F₁ (N)</label>
+            <label>Lực Trái F₁ (N)</label>
             <input type="number" id="force-left" value="100" step="10" min="0" max="10000" oninput="updateForceDisplay()">
             <span class="val" id="fl-val">100 N</span>
           </div>
           <div class="control-group">
-            <label>Lực Đội Phải F₂ (N)</label>
+            <label>Lực Phải F₂ (N)</label>
             <input type="number" id="force-right" value="100" step="10" min="0" max="10000" oninput="updateForceDisplay()">
             <span class="val" id="fr-val">100 N</span>
           </div>
         </div>
       </div>
       <div class="data-panel">
-        <div class="data-cell"><div class="dc-label">F₁</div><div class="dc-val" id="fp-f1">100<span class="dc-unit">N</span></div></div>
-        <div class="data-cell"><div class="dc-label">F₂</div><div class="dc-val" id="fp-f2">100<span class="dc-unit">N</span></div></div>
+        <div class="data-cell"><div class="dc-label">F₁ (trái)</div><div class="dc-val" id="fp-f1">100<span class="dc-unit">N</span></div></div>
+        <div class="data-cell"><div class="dc-label">F₂ (phải)</div><div class="dc-val" id="fp-f2">100<span class="dc-unit">N</span></div></div>
         <div class="data-cell"><div class="dc-label">Hợp Lực</div><div class="dc-val" id="fp-net">0<span class="dc-unit">N</span></div></div>
-        <div class="data-cell"><div class="dc-label">Kết quả</div><div class="dc-val" id="fp-result" style="font-size:14px">⇌ Cân bằng</div></div>
+        <div class="data-cell"><div class="dc-label">Kết quả</div><div class="dc-val" id="fp-result" style="font-size:13px">— Chọn nhân vật —</div></div>
       </div>
       <div class="info-grid">
         <div class="info-block">
           <h4>Định luật Newton II</h4>
           <ul>
-            <li>F = m·a</li>
-            <li>Hợp lực = F₂ – F₁</li>
-            <li>Nếu F_net = 0: cân bằng lực</li>
+            <li>F = m·a → vật chuyển động theo hợp lực</li>
+            <li>Người kéo → kéo thùng về phía mình</li>
+            <li>Người đẩy → đẩy thùng ra xa mình</li>
+            <li>F_net = 0 → thùng đứng yên (cân bằng)</li>
           </ul>
         </div>
         <div class="info-block">
-          <h4>Nguyên lý</h4>
+          <h4>Các trường hợp thú vị</h4>
           <ul>
-            <li>Vật chuyển động theo chiều hợp lực</li>
-            <li>Lực lớn hơn → thắng kéo co</li>
-            <li>F₁ = F₂ → cân bằng</li>
+            <li>Cả 2 đều kéo → lực ngược chiều → triệt tiêu nếu bằng nhau</li>
+            <li>Cả 2 đều đẩy → lực ngược chiều → triệt tiêu nếu bằng nhau</li>
+            <li>Trái kéo + Phải đẩy → cùng chiều → hợp lực sang trái</li>
+            <li>Trái đẩy + Phải kéo → cùng chiều → hợp lực sang phải</li>
           </ul>
         </div>
       </div>
@@ -413,38 +452,92 @@
     <div class="sim-canvas" style="padding:0; background:#030712; min-height:320px;">
       <canvas id="young-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%;"></canvas>
     </div>
-    <div class="sim-controls">
-      <div class="control-group">
-        <label>Bước sóng λ (nm)</label>
-        <input type="number" id="lambda" value="600" step="10" min="380" max="780" oninput="runYoung()">
-        <span class="val" id="lambda-color-label" style="font-size:11px;color:#f90">Cam-đỏ</span>
+
+    <!-- Controls dạng 2 cột gọn gàng -->
+    <div class="young-controls-grid">
+      <div class="young-param-card">
+        <div class="young-param-label">Bước sóng λ</div>
+        <div class="young-param-row">
+          <input type="number" id="lambda" value="600" step="10" min="380" max="780"
+            style="width:90px;" oninput="runYoung()">
+          <span class="young-param-unit">nm</span>
+          <span class="young-color-dot" id="lambda-color-dot"></span>
+          <span id="lambda-color-label" style="font-size:11px;font-weight:700;color:#f90">Cam-đỏ</span>
+        </div>
+        <input type="range" id="lambda-range" min="380" max="780" value="600" step="5"
+          class="young-slider" oninput="document.getElementById('lambda').value=this.value; runYoung();">
       </div>
-      <div class="control-group">
-        <label>Khoảng cách khe a (mm)</label>
-        <input type="number" id="a-slit" value="0.5" step="0.05" min="0.1" max="2" oninput="runYoung()">
+
+      <div class="young-param-card">
+        <div class="young-param-label">Khoảng cách khe <i>a</i></div>
+        <div class="young-param-row">
+          <input type="number" id="a-slit" value="0.5" step="0.05" min="0.1" max="2"
+            style="width:90px;" oninput="runYoung()">
+          <span class="young-param-unit">mm</span>
+        </div>
+        <input type="range" id="a-range" min="0.1" max="2" value="0.5" step="0.05"
+          class="young-slider" oninput="document.getElementById('a-slit').value=this.value; runYoung();">
       </div>
-      <div class="control-group">
-        <label>Khoảng cách D (m)</label>
-        <input type="number" id="D-screen" value="1.5" step="0.1" min="0.5" max="5" oninput="runYoung()">
+
+      <div class="young-param-card">
+        <div class="young-param-label">Khoảng cách màn <i>D</i></div>
+        <div class="young-param-row">
+          <input type="number" id="D-screen" value="1.5" step="0.1" min="0.5" max="5"
+            style="width:90px;" oninput="runYoung()">
+          <span class="young-param-unit">m</span>
+        </div>
+        <input type="range" id="D-range" min="0.5" max="5" value="1.5" step="0.1"
+          class="young-slider" oninput="document.getElementById('D-screen').value=this.value; runYoung();">
       </div>
-      <div class="control-group">
-        <label>Số vân hiển thị</label>
-        <input type="number" id="young-orders" value="7" step="1" min="3" max="15" oninput="runYoung()">
+
+      <div class="young-param-card">
+        <div class="young-param-label">Số vân hiển thị</div>
+        <div class="young-param-row">
+          <input type="number" id="young-orders" value="7" step="1" min="3" max="15"
+            style="width:90px;" oninput="runYoung()">
+          <span class="young-param-unit">vân</span>
+        </div>
+        <input type="range" id="orders-range" min="3" max="15" value="7" step="1"
+          class="young-slider" oninput="document.getElementById('young-orders').value=this.value; runYoung();">
       </div>
     </div>
   </div>
-  <div class="data-panel">
-    <div class="data-cell"><div class="dc-label">Khoảng vân i</div><div class="dc-val" id="i-val">–<span class="dc-unit">mm</span></div></div>
-    <div class="data-cell"><div class="dc-label">λ (bước sóng)</div><div class="dc-val" id="lambda-val-display">600<span class="dc-unit">nm</span></div></div>
-    <div class="data-cell"><div class="dc-label">Công thức i = λD/a</div><div class="dc-val" style="font-size:12px;" id="young-calc-display">–</div></div>
-    <div class="data-cell"><div class="dc-label">Màu ánh sáng</div><div class="dc-val" id="young-desc" style="font-size:13px;">Cam-đỏ</div></div>
+
+  <!-- Kết quả tính toán nổi bật -->
+  <div class="young-result-banner">
+    <div class="young-result-item">
+      <div class="yr-label">Khoảng vân <i>i</i></div>
+      <div class="yr-value" id="i-val">–<span class="dc-unit">mm</span></div>
+    </div>
+    <div class="young-result-item">
+      <div class="yr-label">Bước sóng λ</div>
+      <div class="yr-value" id="lambda-val-display">600<span class="dc-unit">nm</span></div>
+    </div>
+    <div class="young-result-item young-result-wide">
+      <div class="yr-label">Công thức &nbsp; <i>i = λD / a</i></div>
+      <div class="yr-value" style="font-size:13px;" id="young-calc-display">–</div>
+    </div>
+    <div class="young-result-item">
+      <div class="yr-label">Màu ánh sáng</div>
+      <div class="yr-value" id="young-desc" style="font-size:14px;">Cam-đỏ</div>
+    </div>
   </div>
+
   <div class="info-grid">
-    <div class="info-block"><h4>Công thức Young</h4><ul><li>i = λD / a</li><li>Vân sáng: x<sub>k</sub> = k·i (k = 0, ±1, ±2...)</li><li>Vân tối: x<sub>k</sub> = (k + ½)·i</li><li>λ: bước sóng (m), D: khoảng cách màn (m), a: khoảng cách 2 khe (m)</li></ul></div>
-    <div class="info-block"><h4>Màu sắc ánh sáng</h4><ul><li>Tím: 380–450 nm</li><li>Xanh lam: 450–495 nm</li><li>Xanh lục: 495–570 nm</li><li>Vàng–Cam–Đỏ: 570–780 nm</li></ul></div>
+    <div class="info-block"><h4>Công thức Young</h4><ul>
+      <li>i = λD / a</li>
+      <li>Vân sáng: x<sub>k</sub> = k·i (k = 0, ±1, ±2...)</li>
+      <li>Vân tối: x<sub>k</sub> = (k + ½)·i</li>
+      <li>λ: bước sóng (m), D: khoảng cách màn (m), a: khoảng cách 2 khe (m)</li>
+    </ul></div>
+    <div class="info-block"><h4>Màu sắc ánh sáng</h4><ul>
+      <li>Tím: 380–450 nm</li>
+      <li>Xanh lam: 450–495 nm</li>
+      <li>Xanh lục: 495–570 nm</li>
+      <li>Vàng–Cam–Đỏ: 570–780 nm</li>
+    </ul></div>
   </div>
 </div>
-
 	<!-- ĐỘNG NĂNG – THẾ NĂNG -->
 <div class="page" id="page-energy">
   <div class="page-header physics-header">
@@ -454,8 +547,16 @@
 
   <!-- Tab selector -->
   <div class="energy-tab-bar">
-    <button class="energy-tab active" id="tab-ke" onclick="switchEnergyTab('ke')">🏃 Động năng</button>
-    <button class="energy-tab" id="tab-pe" onclick="switchEnergyTab('pe')">🤸 Thế năng</button>
+    <button class="energy-tab active" id="tab-ke" onclick="switchEnergyTab('ke')">
+      <span class="etab-icon">🏃</span>
+      <span class="etab-text">Động năng</span>
+      <span class="etab-formula">W<sub>đ</sub> = ½mv²</span>
+    </button>
+    <button class="energy-tab" id="tab-pe" onclick="switchEnergyTab('pe')">
+      <span class="etab-icon">🤸</span>
+      <span class="etab-text">Thế năng</span>
+      <span class="etab-formula">W<sub>t</sub> = mgh</span>
+    </button>
   </div>
 
   <!-- ĐỘNG NĂNG PANEL -->
@@ -469,12 +570,9 @@
       <div class="sim-canvas" style="padding:0; min-height:240px;">
         <canvas id="ke-canvas" width="700" height="220" style="display:block;max-width:100%;background:#c8f0e8"></canvas>
       </div>
-      <div class="sim-controls" style="grid-template-columns:repeat(3,1fr)">
-        <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="ke-mass" value="60" step="5" min="10" max="200" oninput="resetKE()"></div>
-        <div class="control-group"><label>Vận tốc v (m/s)</label><input type="number" id="ke-velocity" value="5" step="0.5" min="0.5" max="20" oninput="resetKE()"></div>
-        <div class="control-group" style="align-self:end">
-          <button class="btn btn-physics" onclick="calcKE()" style="width:100%;padding:10px">= Tính Động năng</button>
-        </div>
+      <div class="sim-controls" style="grid-template-columns:repeat(2,1fr)">
+        <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="ke-mass" value="60" step="5" min="10" max="200" oninput="calcKE()"></div>
+        <div class="control-group"><label>Vận tốc v (m/s)</label><input type="number" id="ke-velocity" value="5" step="0.5" min="0.5" max="20" oninput="calcKE()"></div>
       </div>
     </div>
     <div class="data-panel">
@@ -483,7 +581,7 @@
       <div class="data-cell"><div class="dc-label">Động năng Wđ</div><div class="dc-val" id="ke-result-val">750.0<span class="dc-unit">J</span></div></div>
       <div class="data-cell"><div class="dc-label">Công thức</div><div class="dc-val" style="font-size:13px;">Wđ = ½mv²</div></div>
     </div>
-    <div style="padding:14px 18px;background:#eef6ff;border-top:2px solid var(--border);font-size:14px;font-family:'Nunito',sans-serif;color:#1565c0;font-weight:700;" id="ke-formula-display">
+    <div class="energy-formula-display" id="ke-formula-display">
       Wđ = ½ × 60 × 5² = <b>750.0 J</b>
     </div>
     <div class="info-grid">
@@ -517,7 +615,7 @@
       <div class="data-cell"><div class="dc-label">Thế năng Wt</div><div class="dc-val" id="pe-result-val">2695<span class="dc-unit">J</span></div></div>
       <div class="data-cell"><div class="dc-label">Vận tốc chạm nước</div><div class="dc-val" id="pe-vland-val">9.9<span class="dc-unit">m/s</span></div></div>
     </div>
-    <div style="padding:14px 18px;background:#eef6ff;border-top:2px solid var(--border);font-size:14px;font-family:'Nunito',sans-serif;color:#1565c0;font-weight:700;" id="pe-formula-display">
+    <div class="energy-formula-display" id="pe-formula-display">
       Wt = mgh = 55 × 9.8 × 5 = <b>2695 J</b> | v chạm nước = √(2gh) = <b>9.9 m/s</b>
     </div>
     <div class="info-grid">
@@ -536,17 +634,28 @@
   <div class="sim-container">
     <div class="sim-toolbar">
       <span class="sim-title">// MOMENT LỰC. M = F × d</span>
-      <button class="btn btn-physics" onclick="updateTorque()">🔄 Cập nhật</button>
+      <button class="btn btn-physics" id="torque-run-btn" onclick="startTorque()">▶ CHẠY</button>
       <button class="btn btn-secondary" onclick="resetTorque()">↺ Reset</button>
     </div>
-    <div class="sim-canvas" style="padding:0; min-height:280px;">
-      <canvas id="torque-canvas" width="700" height="280" style="display:block;max-width:100%;width:100%;background:#dff0ea"></canvas>
+    <div class="sim-canvas" style="padding:0; min-height:320px;">
+      <canvas id="torque-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%;background:#dff0ea"></canvas>
     </div>
-    <div class="sim-controls">
-      <div class="control-group"><label>Lực F₁ (N)</label><input type="number" id="F1-torque" value="10" step="1" min="0" max="200" oninput="updateTorque()"></div>
-      <div class="control-group"><label>Cánh tay đòn d₁ (m)</label><input type="number" id="d1-torque" value="0.8" step="0.1" min="0.1" max="3" oninput="updateTorque()"></div>
-      <div class="control-group"><label>Lực F₂ (N)</label><input type="number" id="F2-torque" value="20" step="1" min="0" max="200" oninput="updateTorque()"></div>
-      <div class="control-group"><label>Cánh tay đòn d₂ (m)</label><input type="number" id="d2-torque" value="0.4" step="0.1" min="0.1" max="3" oninput="updateTorque()"></div>
+    <!-- Moment force cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--border);">
+      <div style="padding:12px 16px;background:#eef6ff;border-right:2px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">↺ Moment M₁ (quay trái)</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <div class="control-group" style="margin:0;flex:1;min-width:100px"><label>F₁ (N)</label><input type="number" id="F1-torque" value="10" step="1" min="0" max="200" oninput="updateTorqueDisplay()"></div>
+          <div class="control-group" style="margin:0;flex:1;min-width:100px"><label>d₁ (m)</label><input type="number" id="d1-torque" value="0.8" step="0.1" min="0.1" max="3" oninput="updateTorqueDisplay()"></div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;background:#fff5f5;">
+        <div style="font-size:11px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">↻ Moment M₂ (quay phải)</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <div class="control-group" style="margin:0;flex:1;min-width:100px"><label>F₂ (N)</label><input type="number" id="F2-torque" value="20" step="1" min="0" max="200" oninput="updateTorqueDisplay()"></div>
+          <div class="control-group" style="margin:0;flex:1;min-width:100px"><label>d₂ (m)</label><input type="number" id="d2-torque" value="0.4" step="0.1" min="0.1" max="3" oninput="updateTorqueDisplay()"></div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="data-panel">
@@ -911,15 +1020,15 @@
     <div style="padding:16px 18px 8px; background:#f7fbff; border-top:2px solid var(--border);">
       <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px;">🧬 Chọn bào quan để xem chi tiết:</div>
       <div id="cell-chips" style="display:flex; flex-wrap:wrap; gap:8px;">
-        <button class="cell-chip" onclick="showOrganelleInfo('wall')">🟫 Thành tế bào</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('membrane')">🟡 Màng sinh chất</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('nucleus')">🟠 Nhân tế bào</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('vacuole')">🔵 Không bào</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('chloroplast')">🟢 Lục lạp</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('mitochondria')">🔴 Ty thể</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('golgi')">🩷 Bộ máy Golgi</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('er')">🟣 Lưới nội chất</button>
-        <button class="cell-chip" onclick="showOrganelleInfo('ribosome')">⚪ Ribosome</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('wall')">🟫 Thành tế bào</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('membrane')">🟡 Màng sinh chất</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('nucleus')">🟠 Nhân tế bào</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('vacuole')">🔵 Không bào</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('chloroplast')">🟢 Lục lạp</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('mitochondria')">🔴 Ty thể</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('golgi')">🩷 Bộ máy Golgi</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('er')">🟣 Lưới nội chất</button>
+        <button class="cell-chip" onclick="showOrganelleInfoFromChip('ribosome')">⚪ Ribosome</button>
       </div>
     </div>
 
