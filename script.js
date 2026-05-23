@@ -1480,6 +1480,16 @@ function renderPeriodicTable() {
   grid.innerHTML = html;
 }
 
+// Dữ liệu số oxi hóa phổ biến của 118 nguyên tố
+const oxidationStates = {
+  1: "+1, -1", 2: "0", 3: "+1", 4: "+2", 5: "+3", 6: "-4, +2, +4", 7: "-3, +3, +5", 8: "-2", 9: "-1", 10: "0",
+  11: "+1", 12: "+2", 13: "+3", 14: "-4, +2, +4", 15: "-3, +3, +5", 16: "-2, +2, +4, +6", 17: "-1, +1, +3, +5, +7", 18: "0",
+  19: "+1", 20: "+2", 21: "+3", 22: "+2, +3, +4", 23: "+2, +3, +4, +5", 24: "+2, +3, +6", 25: "+2, +3, +4, +6, +7", 26: "+2, +3", 27: "+2, +3", 28: "+2, +3", 29: "+1, +2", 30: "+2", 31: "+3", 32: "-4, +2, +4", 33: "-3, +3, +5", 34: "-2, +2, +4, +6", 35: "-1, +1, +3, +5, +7", 36: "0, +2",
+  37: "+1", 38: "+2", 39: "+3", 40: "+4", 41: "+3, +5", 42: "+6", 43: "+4, +6, +7", 44: "+3, +4, +8", 45: "+3", 46: "+2, +4", 47: "+1", 48: "+2", 49: "+3", 50: "+2, +4", 51: "-3, +3, +5", 52: "-2, +2, +4, +6", 53: "-1, +1, +3, +5, +7", 54: "0, +2, +4, +6, +8",
+  55: "+1", 56: "+2", 57: "+3", 58: "+3, +4", 59: "+3", 60: "+3", 61: "+3", 62: "+2, +3", 63: "+2, +3", 64: "+3", 65: "+3", 66: "+3", 67: "+3", 68: "+3", 69: "+3", 70: "+2, +3", 71: "+3", 72: "+4", 73: "+5", 74: "+4, +6", 75: "+4, +6, +7", 76: "+3, +4, +8", 77: "+3, +4", 78: "+2, +4", 79: "+1, +3", 80: "+1, +2", 81: "+1, +3", 82: "+2, +4", 83: "+3, +5", 84: "+2, +4", 85: "-1, +1, +3, +5", 86: "0, +2",
+  87: "+1", 88: "+2", 89: "+3", 90: "+4", 91: "+5", 92: "+3, +4, +5, +6", 93: "+5", 94: "+4", 95: "+3", 96: "+3", 97: "+3", 98: "+3", 99: "+3", 100: "+3", 101: "+3", 102: "+2, +3", 103: "+3", 104: "+4", 105: "+5", 106: "+6", 107: "+7", 108: "+8", 109: "Không rõ", 110: "Không rõ", 111: "Không rõ", 112: "+2 (dự đoán)", 113: "Không rõ", 114: "+2, +4 (dự đoán)", 115: "Không rõ", 116: "+2, +4 (dự đoán)", 117: "Không rõ", 118: "0 (dự đoán)"
+};
+
 function showElementDetail(num) {
   const element = elementsData.find(el => el.number === num);
   if (!element) return;
@@ -1493,6 +1503,9 @@ function showElementDetail(num) {
   detail.style.display = 'block';
   const cls = getCategoryClass(element.category);
   const catVi = categoryViNames[cls] || element.category;
+  
+  // Lấy số oxi hóa từ mảng, nếu không có thì để trống
+  const oxiState = oxidationStates[element.number] || '—';
 
   detail.innerHTML = `
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
@@ -1504,9 +1517,10 @@ function showElementDetail(num) {
     </div>
     <div class="detail-body">
       <div><strong>Số nguyên tử (Z)</strong>&nbsp; ${element.number}</div>
-      <div><strong>Khối lượng nguyên tử</strong>&nbsp; ${element.mass} u</div>
-      <div><strong>Độ âm điện (Pauling)</strong>&nbsp; ${element.electronegativity !== null ? element.electronegativity : '—'}</div>
-      <div><strong>Cấu hình electron</strong>&nbsp; <code>${element.config}</code></div>
+      <div><strong>Khối lượng</strong>&nbsp; ${element.mass} u</div>
+      <div><strong>Độ âm điện</strong>&nbsp; ${element.electronegativity !== null ? element.electronegativity : '—'}</div>
+      <div><strong>Số oxi hóa</strong>&nbsp; ${oxiState}</div>
+      <div style="grid-column: 1 / -1;"><strong>Cấu hình electron</strong>&nbsp; <code>${element.config}</code></div>
     </div>`;
 }
 
@@ -2141,6 +2155,48 @@ function drawPlantCell() {
   [[cx-60,cy-30], [cx-40,cy-40], [cx-80,cy-60], [cx-50,cy-70], [cx-100,cy+10]].forEach(pos => {
     ctx.beginPath(); ctx.arc(pos[0], pos[1], 3, 0, Math.PI*2); ctx.fill();
   });
+  // --- THÊM VÀO CUỐI HÀM drawPlantCell() ---
+  
+  // Vẽ khung vuông màu vàng (highlight) bao quanh bào quan đang được chọn
+  if (currentOrganelle) {
+    ctx.strokeStyle = '#f1c40f'; // Màu vàng
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 6]); // Viền đứt nét tạo cảm giác "đang quét"
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#f1c40f'; // Hiệu ứng phát sáng
+    ctx.beginPath();
+
+    if (currentOrganelle === 'wall') {
+      ctx.strokeRect(cx - 215, cy - 135, 430, 270);
+    } else if (currentOrganelle === 'membrane') {
+      ctx.strokeRect(cx - 195, cy - 115, 390, 230);
+    } else if (currentOrganelle === 'vacuole') {
+      ctx.strokeRect(cx - 125, cy - 65, 250, 150);
+    } else if (currentOrganelle === 'nucleus') {
+      ctx.strokeRect(cx - 170, cy - 80, 80, 80);
+    } else if (currentOrganelle === 'er') {
+      ctx.strokeRect(cx - 105, cy - 75, 90, 70);
+    } else if (currentOrganelle === 'chloroplast') {
+      [[cx-80,cy+80], [cx+120,cy-60], [cx+140,cy+60]].forEach(pos => {
+        ctx.strokeRect(pos[0]-25, pos[1]-17, 50, 34);
+      });
+    } else if (currentOrganelle === 'mitochondria') {
+      [[cx-120,cy+60], [cx+100,cy+70], [cx+60,cy-80]].forEach(pos => {
+        ctx.strokeRect(pos[0]-20, pos[1]-15, 40, 30);
+      });
+    } else if (currentOrganelle === 'golgi') {
+      ctx.strokeRect(cx + 45, cy - 55, 75, 110);
+    } else if (currentOrganelle === 'ribosome') {
+      [[cx-60,cy-30], [cx-40,cy-40], [cx-80,cy-60], [cx-50,cy-70], [cx-100,cy+10]].forEach(pos => {
+        ctx.strokeRect(pos[0]-8, pos[1]-8, 16, 16);
+      });
+    }
+
+    ctx.stroke();
+    // Trả lại thiết lập vẽ mặc định cho các frame sau
+    ctx.setLineDash([]); 
+    ctx.shadowBlur = 0;  
+  }
 }
 
 function setupCellEvents() {
