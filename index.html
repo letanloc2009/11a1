@@ -45,7 +45,7 @@
         <div class="nav-item" onclick="showPage('wave')">〰 Sóng cơ</div>
         <div class="nav-item" onclick="showPage('circuit')">⚙ Mạch điện</div>
 		<div class="nav-item" onclick="showPage('young')">🌈 Giao thoa Young</div>
-		<div class="nav-item" onclick="showPage('energy')">⚡ Năng lượng</div>
+		<div class="nav-item" onclick="showPage('energy')">⚡ Động năng – Thế năng</div>
 		<div class="nav-item" onclick="showPage('torque')">🔄 Moment lực</div>
       </div>
     </div>
@@ -330,7 +330,7 @@
           <h4>Loại sóng cơ</h4>
           <ul>
             <li>Sóng ngang: dao động ⊥ truyền sóng</li>
-            <li>Sóng dọc: dao động ∥ truyền sóng</li>
+            <li>Sóng dọc: dao động // truyền sóng</li>
             <li>Sóng dừng: giao thoa hai sóng ngược chiều</li>
           </ul>
         </div>
@@ -410,63 +410,120 @@
       <button class="btn btn-physics" onclick="runYoung()">✨ Cập nhật</button>
       <button class="btn btn-secondary" onclick="resetYoung()">↺ Mặc định</button>
     </div>
-    <div class="sim-canvas" style="padding:0; background:#030712;">
-      <canvas id="young-canvas" width="700" height="320" style="display:block;max-width:100%;"></canvas>
+    <div class="sim-canvas" style="padding:0; background:#030712; min-height:320px;">
+      <canvas id="young-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%;"></canvas>
     </div>
     <div class="sim-controls">
-      <div class="control-group"><label>Bước sóng λ (nm)</label><input type="number" id="lambda" value="600" step="10" min="380" max="780" oninput="runYoung()"></div>
-      <div class="control-group"><label>Khoảng cách khe a (mm)</label><input type="number" id="a-slit" value="0.5" step="0.05" min="0.1" max="2" oninput="runYoung()"></div>
-      <div class="control-group"><label>Khoảng cách D (m)</label><input type="number" id="D-screen" value="1.5" step="0.1" min="0.5" max="5" oninput="runYoung()"></div>
+      <div class="control-group">
+        <label>Bước sóng λ (nm)</label>
+        <input type="number" id="lambda" value="600" step="10" min="380" max="780" oninput="runYoung()">
+        <span class="val" id="lambda-color-label" style="font-size:11px;color:#f90">Cam-đỏ</span>
+      </div>
+      <div class="control-group">
+        <label>Khoảng cách khe a (mm)</label>
+        <input type="number" id="a-slit" value="0.5" step="0.05" min="0.1" max="2" oninput="runYoung()">
+      </div>
+      <div class="control-group">
+        <label>Khoảng cách D (m)</label>
+        <input type="number" id="D-screen" value="1.5" step="0.1" min="0.5" max="5" oninput="runYoung()">
+      </div>
+      <div class="control-group">
+        <label>Số vân hiển thị</label>
+        <input type="number" id="young-orders" value="7" step="1" min="3" max="15" oninput="runYoung()">
+      </div>
     </div>
   </div>
   <div class="data-panel">
     <div class="data-cell"><div class="dc-label">Khoảng vân i</div><div class="dc-val" id="i-val">–<span class="dc-unit">mm</span></div></div>
-    <div class="data-cell"><div class="dc-label">Vân sáng trung tâm</div><div class="dc-val" id="center-val">bậc 0</div></div>
-    <div class="data-cell"><div class="dc-label">i = λD/a</div><div class="dc-val" style="font-size:14px;">công thức</div></div>
-    <div class="data-cell"><div class="dc-label">Hiện tượng</div><div class="dc-val" id="young-desc">Giao thoa ánh sáng</div></div>
+    <div class="data-cell"><div class="dc-label">λ (bước sóng)</div><div class="dc-val" id="lambda-val-display">600<span class="dc-unit">nm</span></div></div>
+    <div class="data-cell"><div class="dc-label">Công thức i = λD/a</div><div class="dc-val" style="font-size:12px;" id="young-calc-display">–</div></div>
+    <div class="data-cell"><div class="dc-label">Màu ánh sáng</div><div class="dc-val" id="young-desc" style="font-size:13px;">Cam-đỏ</div></div>
   </div>
   <div class="info-grid">
-    <div class="info-block"><h4>Công thức Young</h4><ul><li>i = λD / a</li><li>Vân sáng: x = k.i</li><li>Vân tối: x = (k+½)i</li><li>λ: bước sóng, D: khoảng cách, a: khoảng cách 2 khe</li></ul></div>
-    <div class="info-block"><h4>Điều kiện giao thoa</h4><ul><li>Hai sóng kết hợp (cùng tần số, hiệu pha không đổi)</li><li>Ánh sáng đơn sắc</li><li>Vân sáng: δ = kλ; Vân tối: δ = (k+½)λ</li></ul></div>
+    <div class="info-block"><h4>Công thức Young</h4><ul><li>i = λD / a</li><li>Vân sáng: x<sub>k</sub> = k·i (k = 0, ±1, ±2...)</li><li>Vân tối: x<sub>k</sub> = (k + ½)·i</li><li>λ: bước sóng (m), D: khoảng cách màn (m), a: khoảng cách 2 khe (m)</li></ul></div>
+    <div class="info-block"><h4>Màu sắc ánh sáng</h4><ul><li>Tím: 380–450 nm</li><li>Xanh lam: 450–495 nm</li><li>Xanh lục: 495–570 nm</li><li>Vàng–Cam–Đỏ: 570–780 nm</li></ul></div>
   </div>
 </div>
 
-	<!-- NĂNG LƯỢNG -->
+	<!-- ĐỘNG NĂNG – THẾ NĂNG -->
 <div class="page" id="page-energy">
   <div class="page-header physics-header">
     <span class="page-badge physics-badge">⚡ Vật Lí</span>
-    <h2>Động năng – Thế năng – Bảo toàn cơ năng</h2>
+    <h2>Động năng – Thế năng</h2>
   </div>
-  <div class="sim-container">
-    <div class="sim-toolbar">
-      <span class="sim-title">// BẢO TOÀN CƠ NĂNG</span>
-      <button class="btn btn-physics" onclick="toggleEnergySim()" id="energy-btn">▶ Chạy</button>
-      <button class="btn btn-secondary" onclick="resetEnergy()">↺ Làm mới</button>
-    </div>
-    <div class="sim-canvas" style="padding:0; min-height:280px;">
-      <canvas id="energy-canvas" width="700" height="260" style="display:block;max-width:100%;background:#0d1b2a"></canvas>
-    </div>
-    <div class="sim-controls">
-      <div class="control-group">
-        <label>Chế độ mô phỏng</label>
-        <select id="energy-mode" onchange="resetEnergy()">
-          <option value="fall">🏔 Vật rơi tự do từ cao xuống</option>
-          <option value="car">🚗 Xe chạy xuống dốc</option>
-        </select>
+
+  <!-- Tab selector -->
+  <div class="energy-tab-bar">
+    <button class="energy-tab active" id="tab-ke" onclick="switchEnergyTab('ke')">🏃 Động năng</button>
+    <button class="energy-tab" id="tab-pe" onclick="switchEnergyTab('pe')">🤸 Thế năng</button>
+  </div>
+
+  <!-- ĐỘNG NĂNG PANEL -->
+  <div id="panel-ke">
+    <div class="sim-container">
+      <div class="sim-toolbar">
+        <span class="sim-title">// ĐỘNG NĂNG – NGƯỜI ĐANG CHẠY</span>
+        <button class="btn btn-physics" onclick="toggleKE()" id="ke-btn">▶ Chạy</button>
+        <button class="btn btn-secondary" onclick="resetKE()">↺ Làm mới</button>
       </div>
-      <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="m-energy" value="2" step="0.5" min="0.5" max="10" oninput="resetEnergy()"></div>
-      <div class="control-group"><label>Chiều cao h (m)</label><input type="number" id="h-energy" value="20" step="1" min="5" max="50" oninput="resetEnergy()"></div>
+      <div class="sim-canvas" style="padding:0; min-height:240px;">
+        <canvas id="ke-canvas" width="700" height="220" style="display:block;max-width:100%;background:#c8f0e8"></canvas>
+      </div>
+      <div class="sim-controls" style="grid-template-columns:repeat(3,1fr)">
+        <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="ke-mass" value="60" step="5" min="10" max="200" oninput="resetKE()"></div>
+        <div class="control-group"><label>Vận tốc v (m/s)</label><input type="number" id="ke-velocity" value="5" step="0.5" min="0.5" max="20" oninput="resetKE()"></div>
+        <div class="control-group" style="align-self:end">
+          <button class="btn btn-physics" onclick="calcKE()" style="width:100%;padding:10px">= Tính Động năng</button>
+        </div>
+      </div>
+    </div>
+    <div class="data-panel">
+      <div class="data-cell"><div class="dc-label">Khối lượng m</div><div class="dc-val" id="ke-m-val">60<span class="dc-unit">kg</span></div></div>
+      <div class="data-cell"><div class="dc-label">Vận tốc v</div><div class="dc-val" id="ke-v-val">5.0<span class="dc-unit">m/s</span></div></div>
+      <div class="data-cell"><div class="dc-label">Động năng Wđ</div><div class="dc-val" id="ke-result-val">750.0<span class="dc-unit">J</span></div></div>
+      <div class="data-cell"><div class="dc-label">Công thức</div><div class="dc-val" style="font-size:13px;">Wđ = ½mv²</div></div>
+    </div>
+    <div style="padding:14px 18px;background:#eef6ff;border-top:2px solid var(--border);font-size:14px;font-family:'Nunito',sans-serif;color:#1565c0;font-weight:700;" id="ke-formula-display">
+      Wđ = ½ × 60 × 5² = <b>750.0 J</b>
+    </div>
+    <div class="info-grid">
+      <div class="info-block"><h4>Động năng</h4><ul><li>Wđ = ½mv² (J)</li><li>m: khối lượng (kg), v: vận tốc (m/s)</li><li>Vận tốc tăng 2 lần → Wđ tăng 4 lần</li><li>Wđ ≥ 0, bằng 0 khi vật đứng yên</li></ul></div>
+      <div class="info-block"><h4>Ứng dụng</h4><ul><li>Người chạy nhanh → động năng lớn hơn</li><li>Xe ô tô nặng + tốc độ cao → rất nguy hiểm</li><li>Động năng chuyển hóa thành nhiệt khi phanh</li><li>Bảo toàn cơ năng: Wđ + Wt = const</li></ul></div>
     </div>
   </div>
-  <div class="data-panel">
-    <div class="data-cell"><div class="dc-label">Động năng Wđ (J)</div><div class="dc-val" id="ke-val">0.00</div></div>
-    <div class="data-cell"><div class="dc-label">Thế năng Wt (J)</div><div class="dc-val" id="pe-val">0.00</div></div>
-    <div class="data-cell"><div class="dc-label">Cơ năng W (J)</div><div class="dc-val" id="me-val">0.00</div></div>
-    <div class="data-cell"><div class="dc-label">Vận tốc v (m/s)</div><div class="dc-val" id="v-val">0.00</div></div>
-  </div>
-  <div class="info-grid">
-    <div class="info-block"><h4>Công thức</h4><ul><li>Wđ = ½mv² (động năng)</li><li>Wt = mgh (thế năng trọng trường)</li><li>W = Wđ + Wt = const (bảo toàn)</li><li>v = √(2gh) (vận tốc khi chạm đất)</li></ul></div>
-    <div class="info-block"><h4>Nhận xét</h4><ul><li>Vật ở trên cao: Wt lớn, Wđ = 0</li><li>Vật rơi xuống: Wt giảm, Wđ tăng</li><li>Chạm đất: Wđ cực đại, Wt = 0</li><li>Bỏ qua ma sát: W = hằng số</li></ul></div>
+
+  <!-- THẾ NĂNG PANEL -->
+  <div id="panel-pe" style="display:none">
+    <div class="sim-container">
+      <div class="sim-toolbar">
+        <span class="sim-title">// THẾ NĂNG – NGƯỜI NHẢY XUỐNG HỒ BƠI</span>
+        <button class="btn btn-physics" onclick="togglePE()" id="pe-btn">▶ Nhảy!</button>
+        <button class="btn btn-secondary" onclick="resetPE()">↺ Làm mới</button>
+      </div>
+      <div class="sim-canvas" style="padding:0; min-height:260px;">
+        <canvas id="pe-canvas" width="700" height="240" style="display:block;max-width:100%;background:#87CEEB"></canvas>
+      </div>
+      <div class="sim-controls" style="grid-template-columns:repeat(3,1fr)">
+        <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="pe-mass" value="55" step="5" min="10" max="200" oninput="resetPE()"></div>
+        <div class="control-group"><label>Chiều cao h (m)</label><input type="number" id="pe-height" value="5" step="0.5" min="0.5" max="20" oninput="resetPE()"></div>
+        <div class="control-group" style="align-self:end">
+          <button class="btn btn-physics" onclick="calcPE()" style="width:100%;padding:10px">= Tính Thế năng</button>
+        </div>
+      </div>
+    </div>
+    <div class="data-panel">
+      <div class="data-cell"><div class="dc-label">Khối lượng m</div><div class="dc-val" id="pe-m-val">55<span class="dc-unit">kg</span></div></div>
+      <div class="data-cell"><div class="dc-label">Chiều cao h</div><div class="dc-val" id="pe-h-val">5.0<span class="dc-unit">m</span></div></div>
+      <div class="data-cell"><div class="dc-label">Thế năng Wt</div><div class="dc-val" id="pe-result-val">2695<span class="dc-unit">J</span></div></div>
+      <div class="data-cell"><div class="dc-label">Vận tốc chạm nước</div><div class="dc-val" id="pe-vland-val">9.9<span class="dc-unit">m/s</span></div></div>
+    </div>
+    <div style="padding:14px 18px;background:#eef6ff;border-top:2px solid var(--border);font-size:14px;font-family:'Nunito',sans-serif;color:#1565c0;font-weight:700;" id="pe-formula-display">
+      Wt = mgh = 55 × 9.8 × 5 = <b>2695 J</b> | v chạm nước = √(2gh) = <b>9.9 m/s</b>
+    </div>
+    <div class="info-grid">
+      <div class="info-block"><h4>Thế năng trọng trường</h4><ul><li>Wt = mgh (J)</li><li>g ≈ 9.8 m/s² (gia tốc trọng trường)</li><li>h: chiều cao so với mốc thế năng</li><li>Wt phụ thuộc vào vị trí, không phụ thuộc đường đi</li></ul></div>
+      <div class="info-block"><h4>Khi nhảy xuống hồ</h4><ul><li>Ban đầu: Wt = mgh, Wđ = 0</li><li>Đang rơi: Wt giảm → Wđ tăng</li><li>Chạm nước: Wt = 0, v = √(2gh)</li><li>Bảo toàn: Wt → Wđ (bỏ qua sức cản)</li></ul></div>
+    </div>
   </div>
 </div>
 
@@ -478,29 +535,32 @@
   </div>
   <div class="sim-container">
     <div class="sim-toolbar">
-      <span class="sim-title">// MOMENT LỰC. M = F.d</span>
-      <button class="btn btn-physics" onclick="updateTorque()">🔄 Cân bằng</button>
+      <span class="sim-title">// MOMENT LỰC. M = F × d</span>
+      <button class="btn btn-physics" onclick="updateTorque()">🔄 Cập nhật</button>
       <button class="btn btn-secondary" onclick="resetTorque()">↺ Reset</button>
     </div>
-    <div class="sim-canvas" style="padding:0;">
-      <canvas id="torque-canvas" width="700" height="280" style="display:block;max-width:100%;background:#cfe9df"></canvas>
+    <div class="sim-canvas" style="padding:0; min-height:280px;">
+      <canvas id="torque-canvas" width="700" height="280" style="display:block;max-width:100%;width:100%;background:#dff0ea"></canvas>
     </div>
     <div class="sim-controls">
-      <div class="control-group"><label>Lực F₁ (N)</label><input type="number" id="F1-torque" value="10" step="1" min="0" max="100" oninput="updateTorque()"></div>
-      <div class="control-group"><label>Cánh tay đòn d₁ (m)</label><input type="number" id="d1-torque" value="0.8" step="0.1" min="0.1" max="2" oninput="updateTorque()"></div>
-      <div class="control-group"><label>Lực F₂ (N)</label><input type="number" id="F2-torque" value="20" step="1" min="0" max="100" oninput="updateTorque()"></div>
-      <div class="control-group"><label>Cánh tay đòn d₂ (m)</label><input type="number" id="d2-torque" value="0.4" step="0.1" min="0.1" max="2" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Lực F₁ (N)</label><input type="number" id="F1-torque" value="10" step="1" min="0" max="200" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Cánh tay đòn d₁ (m)</label><input type="number" id="d1-torque" value="0.8" step="0.1" min="0.1" max="3" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Lực F₂ (N)</label><input type="number" id="F2-torque" value="20" step="1" min="0" max="200" oninput="updateTorque()"></div>
+      <div class="control-group"><label>Cánh tay đòn d₂ (m)</label><input type="number" id="d2-torque" value="0.4" step="0.1" min="0.1" max="3" oninput="updateTorque()"></div>
     </div>
   </div>
   <div class="data-panel">
-    <div class="data-cell"><div class="dc-label">M₁ = F₁.d₁</div><div class="dc-val" id="M1-val">0<span class="dc-unit">Nm</span></div></div>
-    <div class="data-cell"><div class="dc-label">M₂ = F₂.d₂</div><div class="dc-val" id="M2-val">0<span class="dc-unit">Nm</span></div></div>
-    <div class="data-cell"><div class="dc-label">Kết quả</div><div class="dc-val" id="torque-result">Cân bằng</div></div>
-    <div class="data-cell"><div class="dc-label">Quy tắc moment</div><div class="dc-val" style="font-size:12px;">M₁ = M₂ → cân bằng</div></div>
+    <div class="data-cell"><div class="dc-label">M₁ = F₁ × d₁</div><div class="dc-val" id="M1-val">8.0<span class="dc-unit">Nm</span></div></div>
+    <div class="data-cell"><div class="dc-label">M₂ = F₂ × d₂</div><div class="dc-val" id="M2-val">8.0<span class="dc-unit">Nm</span></div></div>
+    <div class="data-cell"><div class="dc-label">Hiệu moment</div><div class="dc-val" id="torque-diff">0.0<span class="dc-unit">Nm</span></div></div>
+    <div class="data-cell"><div class="dc-label">Kết quả</div><div class="dc-val" id="torque-result" style="font-size:13px;">⚖ Cân bằng</div></div>
+  </div>
+  <div style="padding:14px 18px;background:#eef6ff;border-top:2px solid var(--border);font-size:14px;font-family:'Nunito',sans-serif;color:#1565c0;font-weight:700;" id="torque-formula-display">
+    M₁ = 10 × 0.8 = 8.0 Nm | M₂ = 20 × 0.4 = 8.0 Nm → Cân bằng ✔
   </div>
   <div class="info-grid">
-    <div class="info-block"><h4>Điều kiện cân bằng</h4><ul><li>M₁ = M₂ ⇔ F₁.d₁ = F₂.d₂</li><li>Moment lực làm vật quay quanh trục</li><li>Đòn bẩy: lực nhỏ × cánh tay dài = lực lớn × cánh tay ngắn</li></ul></div>
-    <div class="info-block"><h4>Ứng dụng</h4><ul><li>Kìm, kéo, bập bênh</li><li>Mở nắp chai</li><li>Ròng rọc, bánh răng</li></ul></div>
+    <div class="info-block"><h4>Điều kiện cân bằng</h4><ul><li>M₁ = M₂ ⟺ F₁ × d₁ = F₂ × d₂</li><li>Moment làm vật quay quanh trục cố định</li><li>M > 0: quay thuận chiều kim đồng hồ</li><li>M < 0: quay ngược chiều kim đồng hồ</li></ul></div>
+    <div class="info-block"><h4>Ứng dụng đòn bẩy</h4><ul><li>Kìm, kéo, bập bênh, xà beng</li><li>Lực nhỏ × cánh tay dài = Lực lớn × cánh tay ngắn</li><li>Vô lăng, tay quay cửa</li><li>Cơ thể người: khớp xương là điểm tựa</li></ul></div>
   </div>
 </div>
 
@@ -711,33 +771,37 @@
       
       <div class="periodic-container">
         <div class="sim-toolbar">
-          <span class="sim-title">// BẢNG TUẦN HOÀN</span>
-          <button class="btn btn-chem" onclick="resetPeriodicHighlight()">↺ ĐÓNG CHI TIẾT</button>
+          <span class="sim-title">// BẢNG TUẦN HOÀN 118 NGUYÊN TỐ</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="number" id="atomic-number-input" placeholder="Số hiệu (1–118)" min="1" max="118"
+              style="padding:7px 12px;border-radius:8px;border:2px solid #27ae60;font-size:13px;width:180px;outline:none;background:#1a2640;color:#fff;"
+              oninput="lookupByAtomicNumber(this.value)">
+            <button class="btn btn-chem" onclick="resetPeriodicHighlight()">↺ ĐÓNG CHI TIẾT</button>
+          </div>
+        </div>
+
+        <div class="periodic-legend">
+          <div class="legend-item"><span class="legend-box alkali-metal"></span> Kim loại kiềm</div>
+          <div class="legend-item"><span class="legend-box alkaline-earth"></span> Kiềm thổ</div>
+          <div class="legend-item"><span class="legend-box transition-metal"></span> Chuyển tiếp</div>
+          <div class="legend-item"><span class="legend-box post-transition"></span> Hậu chuyển tiếp</div>
+          <div class="legend-item"><span class="legend-box metalloid"></span> Á kim</div>
+          <div class="legend-item"><span class="legend-box nonmetal"></span> Phi kim</div>
+          <div class="legend-item"><span class="legend-box halogen"></span> Halogen</div>
+          <div class="legend-item"><span class="legend-box noble-gas"></span> Khí hiếm</div>
+          <div class="legend-item"><span class="legend-box lanthanide"></span> Lanthanide</div>
+          <div class="legend-item"><span class="legend-box actinide"></span> Actinide</div>
         </div>
         
-        <div class="periodic-grid" id="periodic-grid">
-	  </div>
+        <div class="periodic-grid" id="periodic-grid"></div>
 	  
         <div class="element-detail" id="element-detail">
           <div class="detail-placeholder">
-            <p>Bấm vào một nguyên tố bất kỳ trong bảng để xem cấu hình chi tiết và các thông số hóa học.</p>
+            <p>🔍 Bấm vào một nguyên tố bất kỳ trong bảng, hoặc nhập số hiệu nguyên tử ở trên để xem thông tin chi tiết.</p>
           </div>
         </div>
       </div>
     </div>
-	
-	<div class="periodic-legend">
-  <div class="legend-item"><span class="legend-box alkali-metal"></span> Kim loại kiềm</div>
-  <div class="legend-item"><span class="legend-box alkaline-earth"></span> Kiềm thổ</div>
-  <div class="legend-item"><span class="legend-box transition-metal"></span> Chuyển tiếp</div>
-  <div class="legend-item"><span class="legend-box post-transition"></span> Hậu chuyển tiếp</div>
-  <div class="legend-item"><span class="legend-box metalloid"></span> Á kim</div>
-  <div class="legend-item"><span class="legend-box nonmetal"></span> Phi kim</div>
-  <div class="legend-item"><span class="legend-box halogen"></span> Halogen</div>
-  <div class="legend-item"><span class="legend-box noble-gas"></span> Khí hiếm</div>
-  <div class="legend-item"><span class="legend-box lanthanide"></span> Lanthanide</div>
-  <div class="legend-item"><span class="legend-box actinide"></span> Actinide</div>
-</div>
         
 	
     <!-- ==================== SINH HỌC: DNA ==================== -->
@@ -751,6 +815,15 @@
           <span class="sim-title">// LẮP RÁP DNA – CẶP BASE NITƠ</span>
           <button class="btn btn-bio" onclick="checkDNA()">✓ KIỂM TRA</button>
           <button class="btn btn-secondary" onclick="resetDNA()">↺ LÀM MỚI</button>
+        </div>
+
+        <!-- Chọn số cặp nucleotide -->
+        <div style="padding:12px 16px;background:#eafaf1;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <label style="font-size:13px;font-weight:700;color:#1a6e3a;">🔢 Số cặp nucleotide:</label>
+          <input type="number" id="dna-pair-count" value="6" min="3" max="12" step="1"
+            style="width:70px;padding:6px 10px;border-radius:8px;border:2px solid #27ae60;font-size:14px;font-weight:700;outline:none;">
+          <button class="btn btn-bio" onclick="applyDNAPairCount()" style="padding:7px 16px;font-size:13px;">✔ Áp dụng</button>
+          <span style="font-size:12px;color:#666;">(3 – 12 cặp)</span>
         </div>
 
         <div class="dna-workspace">
@@ -937,6 +1010,21 @@
 <iframe name="hidden_iframe" id="hidden_iframe" style="display:none" onload="handleFormResponse()"></iframe>
 
 <script>
+  // Modal functions
+  function openModal() {
+    document.getElementById('feedbackModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    document.getElementById('feedbackModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  // Close modal on overlay click
+  document.getElementById('feedbackModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('openModal').addEventListener('click', openModal);
+
   let isSubmitting = false;
   document.getElementById('feedbackForm').onsubmit = function() { isSubmitting = true; };
   function handleFormResponse() {
