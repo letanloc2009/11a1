@@ -1286,3 +1286,232 @@ main {
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   z-index: 10;
 }
+
+/* ==================== ĐỘNG NĂNG – THẾ NĂNG (IMPROVED UI) ==================== */
+
+.energy-tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+  background: #1a2640;
+  border-radius: 0;
+  overflow: hidden;
+  border-bottom: 3px solid #0d1b2a;
+}
+
+.energy-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 20px;
+  border: none;
+  background: #1e3050;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border-bottom: 3px solid transparent;
+  position: relative;
+}
+.energy-tab:hover {
+  background: #22395e;
+  color: rgba(255,255,255,0.85);
+}
+.energy-tab.active {
+  background: linear-gradient(180deg, #1565c0 0%, #1976d2 100%);
+  color: #ffffff;
+  border-bottom: 3px solid #42a5f5;
+  box-shadow: 0 4px 16px rgba(21,101,192,0.35);
+}
+
+.etab-icon  { font-size: 22px; line-height: 1; }
+.etab-text  { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
+.etab-formula {
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  opacity: 0.75;
+  margin-top: 1px;
+}
+
+/* Formula display – thay thế div inline style */
+.energy-formula-display {
+  padding: 14px 22px;
+  background: linear-gradient(135deg, #e8f4ff 0%, #ddeeff 100%);
+  border-top: 2px solid #b3d4f7;
+  border-bottom: 2px solid #b3d4f7;
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  color: #0d47a1;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.energy-formula-display::before {
+  content: '📐';
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.energy-formula-display b {
+  color: #1565c0;
+  font-size: 16px;
+  padding: 0 4px;
+  background: rgba(21,101,192,0.08);
+  border-radius: 4px;
+}
+
+/* ==================== GIAO THOA YOUNG (IMPROVED UI) ==================== */
+
+.young-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 0;
+  background: #f7fbff;
+  border-top: 2px solid var(--border);
+}
+
+.young-param-card {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.young-param-card:last-child { border-right: none; }
+
+.young-param-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.young-param-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.young-param-row input[type="number"] {
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  outline: none;
+  transition: border-color .15s;
+}
+.young-param-row input[type="number"]:focus { border-color: #1976d2; }
+
+.young-param-unit {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.young-color-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+
+/* Slider */
+.young-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+  margin-top: 2px;
+}
+.young-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #1976d2;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(21,101,192,0.4);
+}
+.young-slider::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #1976d2;
+  cursor: pointer;
+  border: none;
+}
+
+/* Result banner */
+.young-result-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.young-result-item {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  border: 2px solid var(--border);
+  border-top: 3px solid var(--physics);
+}
+
+.young-result-wide {
+  grid-column: span 2;
+}
+
+.yr-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+}
+
+.yr-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--physics);
+  word-break: break-all;
+}
+
+@media (max-width: 600px) {
+  .young-controls-grid { grid-template-columns: 1fr 1fr; }
+  .young-result-wide { grid-column: span 1; }
+  .young-result-banner { grid-template-columns: 1fr 1fr; }
+}
+
+/* ==================== CẤU TẠO TẾ BÀO – chip glow khi active ==================== */
+.cell-chip.active {
+  background: var(--bio);
+  border-color: var(--bio);
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(39,174,96,0.35), 0 4px 14px rgba(39,174,96,0.4);
+  animation: chipPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes chipPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(39,174,96,0.35), 0 4px 14px rgba(39,174,96,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(39,174,96,0.2),  0 6px 20px rgba(39,174,96,0.55); }
+}
