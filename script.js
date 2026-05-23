@@ -43,7 +43,7 @@ function showPage(id) {
   if (id === 'acidbase') { initShelf(); }
   if (id === 'dna') { initDNA(); }
   if (id === 'cell') { drawPlantCell(); setupCellEvents(); }
-  if (id === 'young') { runYoung(); }
+  if (id === 'young') { runYoung(); syncYoungSliders(); }
   if (id === 'energy') { resetEnergy(); if(!energyRunning) toggleEnergySim(); }
   if (id === 'torque') { updateTorque(); }
   if (id === 'periodic') {
@@ -223,25 +223,80 @@ function drawGraph() {
   ctx.fillText(maxV.toFixed(0), pad.l-4, pad.t+10);
 }
 
-/* ==================== FORCE ==================== */
+/* ==================== FORCE – PUSH/PULL BOX ==================== */
 let forceRunning = false, forceRAF = null, forceOffset = 0, forceVelocity = 0, forceLastTime = null;
+let leftMode = null, rightMode = null; // 'pull' | 'push' | null
 
-function getForceValues() {
+function fDragStart(event, type) {
+  event.dataTransfer.setData('forceType', type);
+}
+function fDrop(event, side) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+  const type = event.dataTransfer.getData('forceType');
+  if (!type) return;
+  if (side === 'left') leftMode = type;
+  else rightMode = type;
+  updateForceZoneUI();
+  updateForceDisplay();
+}
+function clearForceZone(side) {
+  if (side === 'left') leftMode = null;
+  else rightMode = null;
+  updateForceZoneUI();
+  updateForceDisplay();
+}
+function clearAllForceZones() {
+  leftMode = null; rightMode = null;
+  forceOffset = 0; forceVelocity = 0;
+  forceRunning = false; cancelAnimationFrame(forceRAF);
+  document.getElementById('force-btn').textContent = '▶ CHẠY';
+  updateForceZoneUI(); updateForceDisplay();
+}
+function updateForceZoneUI() {
+  const zl = document.getElementById('force-zone-left');
+  const zr = document.getElementById('force-zone-right');
+  const il = document.getElementById('fz-left-icon');
+  const ir = document.getElementById('fz-right-icon');
+  const ll = document.getElementById('fz-left-label');
+  const lr = document.getElementById('fz-right-label');
+  zl.className = 'force-zone' + (leftMode === 'pull' ? ' has-pull' : leftMode === 'push' ? ' has-push' : '');
+  zr.className = 'force-zone right-zone' + (rightMode === 'pull' ? ' has-pull' : rightMode === 'push' ? ' has-push' : '');
+  il.textContent = leftMode === 'pull' ? '🏃' : leftMode === 'push' ? '💪' : '❓';
+  ir.textContent = rightMode === 'pull' ? '🏃' : rightMode === 'push' ? '💪' : '❓';
+  ll.innerHTML = leftMode === 'pull' ? 'Người kéo<br><small style="color:#e74c3c">←  Kéo về trái</small>' 
+               : leftMode === 'push' ? 'Người đẩy<br><small style="color:#2980b9">→  Đẩy sang phải</small>'
+               : 'Thả nhân vật<br>vào đây';
+  lr.innerHTML = rightMode === 'pull' ? 'Người kéo<br><small style="color:#2980b9">→  Kéo về phải</small>'
+               : rightMode === 'push' ? 'Người đẩy<br><small style="color:#e74c3c">←  Đẩy sang trái</small>'
+               : 'Thả nhân vật<br>vào đây';
+}
+
+function getForceNet() {
   const f1 = parseFloat(document.getElementById('force-left').value) || 0;
   const f2 = parseFloat(document.getElementById('force-right').value) || 0;
-  const maxF = Math.max(f1, f2, 1);
-  return { f1, f2, pl: Math.max(1, Math.min(20, Math.round((f1/maxF)*8))), pr: Math.max(1, Math.min(20, Math.round((f2/maxF)*8))) };
+  // Left pull → force ← (negative), Left push → force → (positive)
+  // Right pull → force → (positive), Right push → force ← (negative)
+  let contrib1 = 0, contrib2 = 0;
+  if (leftMode === 'pull') contrib1 = -f1;
+  else if (leftMode === 'push') contrib1 = +f1;
+  if (rightMode === 'pull') contrib2 = +f2;
+  else if (rightMode === 'push') contrib2 = -f2;
+  return { f1, f2, net: contrib1 + contrib2, contrib1, contrib2 };
 }
 
 function updateForceDisplay() {
-  const { f1, f2 } = getForceValues();
+  const { f1, f2, net } = getForceNet();
   document.getElementById('fl-val').textContent = f1 + ' N';
   document.getElementById('fr-val').textContent = f2 + ' N';
   document.getElementById('fp-f1').innerHTML = f1 + '<span class="dc-unit">N</span>';
   document.getElementById('fp-f2').innerHTML = f2 + '<span class="dc-unit">N</span>';
-  const net = f2 - f1;
-  document.getElementById('fp-net').innerHTML = Math.abs(net).toFixed(0) + '<span class="dc-unit">N</span>';
-  document.getElementById('fp-result').textContent = net > 0 ? '→ Phải thắng' : net < 0 ? '← Trái thắng' : '⇌ Cân bằng';
+  document.getElementById('fp-net').innerHTML = (leftMode || rightMode) ? Math.abs(net).toFixed(0) + '<span class="dc-unit">N</span>' : '–<span class="dc-unit">N</span>';
+  if (!leftMode && !rightMode) {
+    document.getElementById('fp-result').textContent = '— Chọn nhân vật —';
+  } else {
+    document.getElementById('fp-result').textContent = net > 0.5 ? '→ Thùng sang phải' : net < -0.5 ? '← Thùng sang trái' : '⇌ Cân bằng';
+  }
   if (!forceRunning) drawForceScene(forceOffset);
 }
 
@@ -262,17 +317,15 @@ function resetForce() {
 function forceLoop(ts) {
   if (!forceLastTime) forceLastTime = ts;
   const dt = Math.min((ts - forceLastTime)/1000, 0.05); forceLastTime = ts;
-  const { f1, f2 } = getForceValues();
-  const net = f2 - f1;
-  forceVelocity = forceVelocity * 0.97 + (net/500) * dt;
+  const { net } = getForceNet();
+  forceVelocity = forceVelocity * 0.96 + (net/600) * dt;
   forceOffset += forceVelocity * dt;
   forceOffset = Math.max(-1, Math.min(1, forceOffset));
   drawForceScene(forceOffset);
-  document.getElementById('fp-net').innerHTML = Math.abs(net).toFixed(0) + '<span class="dc-unit">N</span>';
-  if (Math.abs(forceOffset) >= 0.98) {
+  if (Math.abs(forceOffset) >= 0.97) {
     forceRunning = false;
     document.getElementById('force-btn').textContent = '▶ CHẠY LẠI';
-    document.getElementById('fp-result').textContent = forceOffset > 0 ? '→ Phải thắng!' : '← Trái thắng!';
+    document.getElementById('fp-result').textContent = forceOffset > 0 ? '→ Thùng đã sang phải!' : '← Thùng đã sang trái!';
     drawForceScene(forceOffset); return;
   }
   if (forceRunning) forceRAF = requestAnimationFrame(forceLoop);
@@ -283,79 +336,196 @@ function drawForceScene(offset) {
   const ctx = c.getContext('2d');
   const W = c.width, H = c.height;
   ctx.clearRect(0, 0, W, H);
+
+  // Background warehouse
   const bg = ctx.createLinearGradient(0,0,0,H);
   bg.addColorStop(0,'#1a1a2e'); bg.addColorStop(1,'#16213e');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#2d5016'; ctx.fillRect(0, H*0.72, W, H*0.28);
-  ctx.fillStyle = '#3a6b1a'; ctx.fillRect(0, H*0.72, W, 6);
-  ctx.strokeStyle = '#4a8a20'; ctx.lineWidth = 1.5;
-  for (let i=10; i<W; i+=18) { ctx.beginPath(); ctx.moveTo(i, H*0.72); ctx.lineTo(i+3, H*0.72-8); ctx.stroke(); }
-  const { f1, f2, pl, pr } = getForceValues();
-  const centerX = W/2 + offset*(W*0.28);
-  const ropeY = H*0.48;
-  const ropeLeft = 60, ropeRight = W-60;
-  ctx.strokeStyle = '#c8a96e'; ctx.lineWidth = 5; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(ropeLeft, ropeY); ctx.lineTo(ropeRight, ropeY); ctx.stroke();
-  ctx.strokeStyle = '#a07840'; ctx.lineWidth = 1.5;
-  for (let rx=ropeLeft; rx<ropeRight; rx+=14) { ctx.beginPath(); ctx.moveTo(rx, ropeY-2); ctx.lineTo(rx+7, ropeY+2); ctx.stroke(); }
-  const mudR = 18;
-  ctx.fillStyle = offset>0.05 ? '#2980b9' : offset<-0.05 ? '#e74c3c' : '#888';
-  ctx.shadowBlur = 14; ctx.shadowColor = ctx.fillStyle;
-  ctx.beginPath(); ctx.arc(centerX, ropeY, mudR*0.55, 0, Math.PI*2); ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#fff'; ctx.fillRect(centerX-1.5, ropeY-mudR-10, 3, mudR);
-  ctx.fillStyle = '#ffe082';
-  ctx.beginPath(); ctx.moveTo(centerX+1, ropeY-mudR-10); ctx.lineTo(centerX+14, ropeY-mudR-4); ctx.lineTo(centerX+1, ropeY-mudR+2); ctx.closePath(); ctx.fill();
+  // Floor
+  ctx.fillStyle = '#2a2a3e'; ctx.fillRect(0, H*0.75, W, H*0.25);
+  // Floor tiles
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+  for(let x=0; x<W; x+=50) { ctx.beginPath(); ctx.moveTo(x, H*0.75); ctx.lineTo(x, H); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(0, H*0.88); ctx.lineTo(W, H*0.88); ctx.stroke();
+  // Floor shadow line
+  ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(0, H*0.75, W, 4);
 
-  function drawPerson(x, y, color, facingLeft) {
-    const dir = facingLeft ? -1 : 1;
-    ctx.fillStyle = color;
-    ctx.fillRect(x-5, y-20, 10, 18);
-    ctx.beginPath(); ctx.arc(x, y-26, 7, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x, y-16); ctx.lineTo(x+dir*12, y-10); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x-3, y-2); ctx.lineTo(x-6, y+14); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x+3, y-2); ctx.lineTo(x+4, y+14); ctx.stroke();
+  const { f1, f2, net, contrib1, contrib2 } = getForceNet();
+  const groundY = H * 0.75;
+  const boxW = 80, boxH = 64;
+  const boxX = W/2 + offset*(W*0.30) - boxW/2;
+  const boxY = groundY - boxH;
+
+  // ---- Draw rope/connection if needed ----
+  const ropeY = boxY + boxH/2;
+  if (leftMode === 'pull') {
+    ctx.strokeStyle = '#c8a96e'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(boxX, ropeY); ctx.lineTo(boxX - 90, ropeY); ctx.stroke();
+    // Rope texture
+    ctx.strokeStyle = '#a07840'; ctx.lineWidth = 1;
+    for(let rx = boxX-90; rx < boxX; rx += 10) {
+      ctx.beginPath(); ctx.moveTo(rx, ropeY-2); ctx.lineTo(rx+5, ropeY+2); ctx.stroke();
+    }
+  }
+  if (rightMode === 'pull') {
+    ctx.strokeStyle = '#c8a96e'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(boxX+boxW, ropeY); ctx.lineTo(boxX+boxW+90, ropeY); ctx.stroke();
+    ctx.strokeStyle = '#a07840'; ctx.lineWidth = 1;
+    for(let rx = boxX+boxW; rx < boxX+boxW+90; rx += 10) {
+      ctx.beginPath(); ctx.moveTo(rx, ropeY-2); ctx.lineTo(rx+5, ropeY+2); ctx.stroke();
+    }
   }
 
-  const leftColors = ['#e74c3c','#c0392b','#e17055','#ff6b6b','#ff7675','#fab1a0','#fd79a8','#d63031'];
-  const spacing = Math.min(52, (centerX-ropeLeft-30)/(pl+1));
-  for (let i=0; i<pl; i++) {
-    const px = centerX-40-(i+1)*spacing;
-    if (px > ropeLeft+10) drawPerson(px, ropeY+2, leftColors[i%leftColors.length], false);
+  // ---- Draw box (thùng hàng) ----
+  ctx.save();
+  const boxGrad = ctx.createLinearGradient(boxX, boxY, boxX+boxW, boxY+boxH);
+  boxGrad.addColorStop(0,'#8B5E3C'); boxGrad.addColorStop(0.5,'#A0714A'); boxGrad.addColorStop(1,'#6B4226');
+  ctx.shadowBlur = 20; ctx.shadowColor = 'rgba(160,113,74,0.5)';
+  ctx.fillStyle = boxGrad;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(boxX, boxY, boxW, boxH, 4) : ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.fill(); ctx.shadowBlur = 0;
+  // Box top
+  ctx.fillStyle = '#B88A5A';
+  ctx.fillRect(boxX+2, boxY+2, boxW-4, 12);
+  // Box stripes
+  ctx.strokeStyle = '#6B4226'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(boxX+boxW/2, boxY); ctx.lineTo(boxX+boxW/2, boxY+boxH); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(boxX, boxY+boxH/2); ctx.lineTo(boxX+boxW, boxY+boxH/2); ctx.stroke();
+  // Box icon
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('📦', boxX+boxW/2, boxY+boxH/2+6);
+  // Box shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(boxX+boxW/2, groundY+2, boxW/2+8, 6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // ---- Draw persons ----
+  function drawWorkerPull(cx, groundY, color, shirtColor, facingRight, leaning) {
+    const dir = facingRight ? 1 : -1;
+    const armX = cx + dir * 18;
+    // Leaning back
+    const lean = leaning * 0.25;
+    ctx.save(); ctx.translate(cx, groundY - 2);
+    // Shoes
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-6 + lean*30, -8, 12, 6);
+    // Legs
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-4+lean*20, -8); ctx.lineTo(-6+lean*40, -30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4+lean*20, -8); ctx.lineTo(6+lean*40, -30); ctx.stroke();
+    // Body (torso)
+    ctx.fillStyle = shirtColor;
+    ctx.fillRect(-8+lean*30, -50, 16, 22);
+    // Arms – reaching toward box
+    ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0+lean*30, -40); ctx.lineTo(dir*22+lean*30, -30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0+lean*30, -40); ctx.lineTo(dir*22+lean*30, -50); ctx.stroke();
+    // Head
+    ctx.fillStyle = '#F5CBA7'; ctx.beginPath(); ctx.arc(lean*30, -58, 10, 0, Math.PI*2); ctx.fill();
+    // Hard hat
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath(); ctx.ellipse(lean*30, -65, 12, 5, 0, 0, Math.PI); ctx.fill();
+    ctx.fillRect(-12+lean*30, -66, 24, 4);
+    ctx.restore();
   }
-  const rightColors = ['#2980b9','#1abc9c','#3498db','#0652dd','#12CBC4','#1e90ff','#6c5ce7','#a29bfe'];
-  const rspacing = Math.min(52, (ropeRight-centerX-30)/(pr+1));
-  for (let i=0; i<pr; i++) {
-    const px = centerX+40+(i+1)*rspacing;
-    if (px < ropeRight-10) drawPerson(px, ropeY+2, rightColors[i%rightColors.length], true);
+
+  function drawWorkerPush(cx, groundY, color, shirtColor, facingRight) {
+    const dir = facingRight ? 1 : -1;
+    ctx.save(); ctx.translate(cx, groundY - 2);
+    // Shoes
+    ctx.fillStyle = '#222'; ctx.fillRect(-6+dir*4, -8, 12, 6);
+    // Legs
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-4+dir*4, -8); ctx.lineTo(-5+dir*8, -30); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(4+dir*4, -8); ctx.lineTo(5+dir*8, -30); ctx.stroke();
+    // Body – leaning forward
+    ctx.fillStyle = shirtColor;
+    ctx.fillRect(-8+dir*6, -52, 16, 22);
+    // Arms – pushing
+    ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0+dir*6, -42); ctx.lineTo(dir*22+dir*6, -38); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0+dir*6, -42); ctx.lineTo(dir*22+dir*6, -50); ctx.stroke();
+    // Head
+    ctx.fillStyle = '#F5CBA7'; ctx.beginPath(); ctx.arc(dir*6, -62, 10, 0, Math.PI*2); ctx.fill();
+    // Hard hat
+    ctx.fillStyle = '#FF6B35';
+    ctx.beginPath(); ctx.ellipse(dir*6, -69, 12, 5, 0, 0, Math.PI); ctx.fill();
+    ctx.fillRect(-12+dir*6, -70, 24, 4);
+    ctx.restore();
   }
-  const arrowLen = Math.min(120, f1/3);
-  const arrowLenR = Math.min(120, f2/3);
-  const arrowY = ropeY-62;
-  ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = '#e74c3c';
-  ctx.beginPath(); ctx.moveTo(ropeLeft+arrowLen+10, arrowY); ctx.lineTo(ropeLeft+10, arrowY); ctx.stroke();
-  ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(ropeLeft+8, arrowY); ctx.lineTo(ropeLeft+20, arrowY-6); ctx.lineTo(ropeLeft+20, arrowY+6); ctx.closePath(); ctx.fill();
-  ctx.shadowBlur = 0; ctx.fillStyle = '#ff7675'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center';
-  ctx.fillText('F₁='+f1+'N', ropeLeft+arrowLen/2+10, arrowY-8);
-  ctx.strokeStyle = '#2980b9'; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = '#2980b9';
-  ctx.beginPath(); ctx.moveTo(ropeRight-arrowLenR-10, arrowY); ctx.lineTo(ropeRight-10, arrowY); ctx.stroke();
-  ctx.fillStyle = '#2980b9'; ctx.beginPath(); ctx.moveTo(ropeRight-8, arrowY); ctx.lineTo(ropeRight-20, arrowY-6); ctx.lineTo(ropeRight-20, arrowY+6); ctx.closePath(); ctx.fill();
-  ctx.shadowBlur = 0; ctx.fillStyle = '#74b9ff'; ctx.fillText('F₂='+f2+'N', ropeRight-arrowLenR/2-10, arrowY-8);
-  ctx.fillStyle = '#ff7675'; ctx.font = 'bold 13px Nunito,sans-serif'; ctx.textAlign = 'left'; ctx.fillText('ĐỘI TRÁI', 8, 20);
-  ctx.fillStyle = '#74b9ff'; ctx.textAlign = 'right'; ctx.fillText('ĐỘI PHẢI', W-8, 20);
-  const barW = W*0.5, barX = (W-barW)/2, barY = H*0.88, barH = 10;
-  ctx.fillStyle = '#222'; ctx.fillRect(barX, barY, barW, barH);
-  const net = f2-f1;
-  if (Math.abs(net) > 1) {
-    const fillW = Math.min(Math.abs(net)/1000, 1)*(barW/2);
-    ctx.fillStyle = net>0 ? '#2980b9' : '#e74c3c';
-    if (net > 0) ctx.fillRect(barX+barW/2, barY, fillW, barH);
-    else ctx.fillRect(barX+barW/2-fillW, barY, fillW, barH);
+
+  // Left person
+  if (leftMode === 'pull') {
+    const px = boxX - 100;
+    drawWorkerPull(px, groundY, '#2d3436', '#e74c3c', true, 1);
+  } else if (leftMode === 'push') {
+    const px = boxX - 30;
+    drawWorkerPush(px, groundY, '#2d3436', '#2980b9', true);
   }
-  ctx.fillStyle = '#fff'; ctx.fillRect(barX+barW/2-1.5, barY-3, 3, barH+6);
-  ctx.fillStyle = '#aaa'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
-  ctx.fillText('HỢP LỰC: '+(net>=0?'+':'')+net.toFixed(0)+' N', W/2, barY+barH+16);
+
+  // Right person
+  if (rightMode === 'pull') {
+    const px = boxX + boxW + 100;
+    drawWorkerPull(px, groundY, '#2d3436', '#2980b9', false, 1);
+  } else if (rightMode === 'push') {
+    const px = boxX + boxW + 30;
+    drawWorkerPush(px, groundY, '#2d3436', '#e74c3c', false);
+  }
+
+  // ---- Force arrows on box ----
+  const arrowY = boxY - 20;
+  const cx = boxX + boxW/2;
+  if (leftMode) {
+    const dir1 = contrib1 >= 0 ? 1 : -1;
+    const len1 = Math.min(Math.abs(contrib1)/3 + 20, 130);
+    const color1 = contrib1 >= 0 ? '#2ecc71' : '#e74c3c';
+    ctx.strokeStyle = color1; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = color1;
+    ctx.beginPath(); ctx.moveTo(cx, arrowY); ctx.lineTo(cx + dir1 * len1, arrowY); ctx.stroke();
+    ctx.fillStyle = color1;
+    const ax = cx + dir1 * len1;
+    ctx.beginPath(); ctx.moveTo(ax + dir1*8, arrowY); ctx.lineTo(ax - dir1*4, arrowY-5); ctx.lineTo(ax - dir1*4, arrowY+5); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = color1;
+    ctx.fillText('F₁='+f1+'N', cx + dir1*len1/2, arrowY - 8);
+  }
+  if (rightMode) {
+    const offsetY2 = leftMode ? 18 : 0;
+    const dir2 = contrib2 >= 0 ? 1 : -1;
+    const len2 = Math.min(Math.abs(contrib2)/3 + 20, 130);
+    const color2 = contrib2 >= 0 ? '#3498db' : '#e67e22';
+    ctx.strokeStyle = color2; ctx.lineWidth = 3; ctx.shadowBlur = 8; ctx.shadowColor = color2;
+    ctx.beginPath(); ctx.moveTo(cx, arrowY - offsetY2); ctx.lineTo(cx + dir2 * len2, arrowY - offsetY2); ctx.stroke();
+    ctx.fillStyle = color2;
+    const ax2 = cx + dir2 * len2;
+    ctx.beginPath(); ctx.moveTo(ax2+dir2*8, arrowY-offsetY2); ctx.lineTo(ax2-dir2*4, arrowY-offsetY2-5); ctx.lineTo(ax2-dir2*4, arrowY-offsetY2+5); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = color2;
+    ctx.fillText('F₂='+f2+'N', cx + dir2*len2/2, arrowY - offsetY2 - 8);
+  }
+
+  // ---- Net force bar at bottom ----
+  if (leftMode || rightMode) {
+    const barW = W * 0.55, barX = (W - barW)/2, barY = H - 28, barH = 10;
+    ctx.fillStyle = '#111'; ctx.fillRect(barX, barY, barW, barH);
+    if (Math.abs(net) > 0.5) {
+      const fillW = Math.min(Math.abs(net)/600, 1) * (barW/2);
+      const netColor = net > 0 ? '#2ecc71' : '#e74c3c';
+      ctx.fillStyle = netColor;
+      if (net > 0) ctx.fillRect(barX+barW/2, barY, fillW, barH);
+      else ctx.fillRect(barX+barW/2-fillW, barY, fillW, barH);
+    }
+    ctx.fillStyle = '#fff'; ctx.fillRect(barX+barW/2-1.5, barY-3, 3, barH+6);
+    ctx.fillStyle = '#aaa'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    const netSign = net > 0 ? '+' : '';
+    ctx.fillText('HỢP LỰC: ' + netSign + net.toFixed(0) + ' N', W/2, barY + barH + 14);
+  } else {
+    ctx.fillStyle = '#7cb9ff'; ctx.font = '12px Space Mono,monospace'; ctx.textAlign = 'center';
+    ctx.fillText('← Kéo nhân vật vào 2 vùng bên trên để xem lực tác dụng →', W/2, H - 16);
+  }
+
+  // Title labels
+  ctx.fillStyle = '#ffe082'; ctx.font = 'bold 12px Nunito,sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('🏭 KHO HÀNG – MÔ PHỎNG LỰC', 12, 20);
 }
 
 /* ==================== WAVE SIM ==================== */
@@ -1386,6 +1556,49 @@ const elementsData = [
   { symbol:"Og", name:"Oganesson", number:118, mass:294, group:"VIIIA", period:7, category:"noble gas", electronegativity:null, config:"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶" }
 ];
 
+
+// === THÊM SỐ OXI HÓA PHỔ BIẾN ===
+elementsData.forEach(el => {
+  let ox = "–";
+  const num = el.number;
+  const cat = el.category;
+  if (cat === "alkali metal") ox = "+1";
+  else if (cat === "alkaline earth") ox = "+2";
+  else if (cat === "halogen") ox = "-1 (có thể +1,+3,+5,+7)";
+  else if (cat === "noble gas") ox = "0";
+  else if (cat === "nonmetal") {
+    if (num === 1) ox = "+1, -1";
+    else if (num === 6) ox = "-4, +4";
+    else if (num === 7) ox = "-3, +3, +5";
+    else if (num === 8) ox = "-2";
+    else if (num === 15) ox = "-3, +3, +5";
+    else if (num === 16) ox = "-2, +4, +6";
+    else ox = "–";
+  }
+  else if (cat === "metalloid") {
+    if (num === 5) ox = "+3";
+    else if (num === 14) ox = "-4, +4";
+    else if (num === 32) ox = "+2, +4";
+    else if (num === 33) ox = "-3, +3, +5";
+    else if (num === 51) ox = "-3, +3, +5";
+    else if (num === 52) ox = "-2, +4, +6";
+    else ox = "–";
+  }
+  else if (cat === "post-transition") {
+    if (num === 13) ox = "+3";
+    else if (num === 31) ox = "+3";
+    else if (num === 49) ox = "+3";
+    else if (num === 81) ox = "+1, +3";
+    else if (num === 82) ox = "+2, +4";
+    else if (num === 83) ox = "+3, +5";
+    else ox = "–";
+  }
+  else if (cat === "transition") ox = "thường +2,+3,...";
+  else if (cat === "lanthanide") ox = "+3";
+  else if (cat === "actinide") ox = "+3, +4, +5, +6";
+  el.oxidation = ox;
+});
+
 function getCategoryClass(cat) {
   const map = {
     'alkali metal':   'alkali-metal',
@@ -1507,7 +1720,8 @@ function showElementDetail(num) {
       <div><strong>Khối lượng nguyên tử</strong>&nbsp; ${element.mass} u</div>
       <div><strong>Độ âm điện (Pauling)</strong>&nbsp; ${element.electronegativity !== null ? element.electronegativity : '—'}</div>
       <div><strong>Cấu hình electron</strong>&nbsp; <code>${element.config}</code></div>
-    </div>`;
+      <div><strong>Số oxi hóa phổ biến</strong>&nbsp; ${element.oxidation}</div>
+	</div>`;
 }
 
 function lookupByAtomicNumber(val) {
@@ -1523,143 +1737,178 @@ function resetPeriodicHighlight() {
   const inp = document.getElementById('atomic-number-input');
   if (inp) inp.value = '';
 }
+
 /* ==================== GIAO THOA YOUNG ==================== */
+
+function syncYoungSliders() {
+  const r1 = document.getElementById('lambda-range');
+  const r2 = document.getElementById('a-range');
+  const r3 = document.getElementById('D-range');
+  const r4 = document.getElementById('orders-range');
+  if(r1) r1.value = document.getElementById('lambda').value;
+  if(r2) r2.value = document.getElementById('a-slit').value;
+  if(r3) r3.value = document.getElementById('D-screen').value;
+  if(r4) r4.value = document.getElementById('young-orders').value;
+}
+
+function getLambdaColorName(lambda) {
+  if (lambda < 420) return 'Tím';
+  if (lambda < 450) return 'Tím – Chàm';
+  if (lambda < 495) return 'Xanh lam';
+  if (lambda < 530) return 'Xanh lục';
+  if (lambda < 570) return 'Vàng lục';
+  if (lambda < 590) return 'Vàng';
+  if (lambda < 625) return 'Cam';
+  if (lambda < 700) return 'Cam đỏ';
+  return 'Đỏ';
+}
+
+// Hàm đổi bước sóng (nm) sang mã màu RGB
+function lambdaToColor(lambda) {
+  let r, g, b, alpha;
+  if (lambda >= 380 && lambda < 440) { r = -(lambda - 440) / (440 - 380); g = 0.0; b = 1.0; } 
+  else if (lambda >= 440 && lambda < 490) { r = 0.0; g = (lambda - 440) / (490 - 440); b = 1.0; } 
+  else if (lambda >= 490 && lambda < 510) { r = 0.0; g = 1.0; b = -(lambda - 510) / (510 - 490); } 
+  else if (lambda >= 510 && lambda < 580) { r = (lambda - 510) / (580 - 510); g = 1.0; b = 0.0; } 
+  else if (lambda >= 580 && lambda < 645) { r = 1.0; g = -(lambda - 645) / (645 - 580); b = 0.0; } 
+  else if (lambda >= 645 && lambda <= 780) { r = 1.0; g = 0.0; b = 0.0; } 
+  else { r = 0.0; g = 0.0; b = 0.0; }
+  
+  if (lambda >= 380 && lambda < 420) alpha = 0.3 + 0.7 * (lambda - 380) / (420 - 380);
+  else if (lambda >= 420 && lambda < 700) alpha = 1.0;
+  else if (lambda >= 700 && lambda <= 780) alpha = 0.3 + 0.7 * (780 - lambda) / (780 - 700);
+  else alpha = 0;
+  
+  return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${alpha})`;
+}
+
 function runYoung() {
   const c = document.getElementById('young-canvas');
   if(!c) return;
   const ctx = c.getContext('2d');
   const W = c.width, H = c.height;
 
+  // Lấy dữ liệu từ input
   const lambda = parseFloat(document.getElementById('lambda').value) || 600;
   const a = parseFloat(document.getElementById('a-slit').value) || 0.5;
   const D = parseFloat(document.getElementById('D-screen').value) || 1.5;
   const orders = parseInt(document.getElementById('young-orders').value) || 7;
 
-  const i_mm = (lambda * D) / (a * 1000);
-  document.getElementById('i-val').innerHTML = i_mm.toFixed(3) + '<span class="dc-unit">mm</span>';
-  document.getElementById('lambda-val-display').innerHTML = lambda + '<span class="dc-unit">nm</span>';
-  document.getElementById('young-calc-display').textContent = `i = λD/a = ${i_mm.toFixed(3)} mm`;
+  // Tính khoảng vân i (mm)
+  const i_mm = (lambda * 1e-6 * D * 1e3) / a;
 
-  let color = '#ff2222', colorName = 'Đỏ';
-  if(lambda < 450) { color = '#8a2be2'; colorName = 'Tím'; }
-  else if(lambda < 495) { color = '#0088ff'; colorName = 'Xanh lam'; }
-  else if(lambda < 570) { color = '#00dd44'; colorName = 'Xanh lục'; }
-  else if(lambda < 590) { color = '#ffee00'; colorName = 'Vàng'; }
-  else if(lambda < 620) { color = '#ffa500'; colorName = 'Cam'; }
+  // Tên màu
+  const colorName = getLambdaColorName(lambda);
+  const el = document.getElementById('lambda-color-label');
+  if (el) { el.textContent = colorName; el.style.color = lambdaToColor(lambda).replace(/,[^,]+\)/, ',1)'); }
+  // Color dot
+  const dot = document.getElementById('lambda-color-dot');
+  if (dot) dot.style.background = lambdaToColor(lambda).replace(/,[^,]+\)/, ',1)');
 
-  document.getElementById('lambda-color-label').textContent = colorName;
-  document.getElementById('lambda-color-label').style.color = color;
-  document.getElementById('young-desc').textContent = colorName;
-  document.getElementById('young-desc').style.color = color;
+  // Cập nhật data panel (dùng đúng ID trong HTML)
+  const iEl = document.getElementById('i-val');
+  if (iEl) iEl.innerHTML = i_mm.toFixed(3) + '<span class="dc-unit">mm</span>';
 
+  const lambdaDisp = document.getElementById('lambda-val-display');
+  if (lambdaDisp) lambdaDisp.innerHTML = lambda + '<span class="dc-unit">nm</span>';
+
+  const calcEl = document.getElementById('young-calc-display');
+  if (calcEl) calcEl.textContent = `${lambda}×10⁻⁹×${D}/${a}×10⁻³ = ${i_mm.toFixed(3)} mm`;
+
+  const descEl = document.getElementById('young-desc');
+  if (descEl) descEl.textContent = colorName;
+
+  // Tính scale: hiển thị đủ ±orders vân trong canvas
+  // scaleX (px/mm) để orders*i_mm lấp đầy nửa chiều rộng
+  const halfW = (W - 20) / 2;
+  const scaleX = Math.max(10, halfW / (Math.max(orders, 3) * i_mm));
+  const centerX = W / 2;
+  const colorStr = lambdaToColor(lambda);
+
+  // Xóa canvas
   ctx.clearRect(0,0,W,H);
-  const bg = ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#03071a'); bg.addColorStop(1,'#060c22');
-  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
 
-  // ====== PHẦN TRÁI: Sơ đồ thí nghiệm (30% chiều rộng) ======
-  const diagW = Math.floor(W * 0.30);
-  const diagH = H;
-  const slitY1 = H/2 - 22, slitY2 = H/2 + 22;
-  const srcX = 28, slitX = diagW - 20, screenX = W - 40;
+  // Nền tối
+  const bgGrad = ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0, '#050a12'); bgGrad.addColorStop(1, '#030712');
+  ctx.fillStyle = bgGrad; ctx.fillRect(0,0,W,H);
 
-  // Nền sơ đồ
-  ctx.fillStyle = 'rgba(255,255,255,0.03)';
-  ctx.fillRect(0,0,diagW,diagH);
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(diagW,0); ctx.lineTo(diagW,H); ctx.stroke();
+  const rulerH = 44;
+  const patternH = H - rulerH;
 
-  // Nguồn sáng S
-  const grad = ctx.createRadialGradient(srcX,H/2,0,srcX,H/2,18);
-  grad.addColorStop(0, color); grad.addColorStop(0.4,'rgba(255,255,255,0.6)'); grad.addColorStop(1,'transparent');
-  ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(srcX,H/2,18,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Space Mono,monospace'; ctx.textAlign = 'center';
-  ctx.fillText('S', srcX, H/2 + 4);
-
-  // Tấm chắn có 2 khe
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(slitX-4, 0, 8, slitY1-6);
-  ctx.fillRect(slitX-4, slitY1+6, 8, slitY2-slitY1-12);
-  ctx.fillRect(slitX-4, slitY2+6, 8, H-(slitY2+6));
-  // Khe sáng
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  ctx.fillRect(slitX-4, slitY1-6, 8, 12);
-  ctx.fillRect(slitX-4, slitY2-6, 8, 12);
-
-  // Nhãn S1, S2
-  ctx.fillStyle = '#ffd966'; ctx.font = 'bold 10px Space Mono,monospace'; ctx.textAlign = 'left';
-  ctx.fillText('S₁', slitX+6, slitY1+4);
-  ctx.fillText('S₂', slitX+6, slitY2+4);
-
-  // Tia sáng từ S đến 2 khe
-  ctx.setLineDash([3,3]);
-  ctx.strokeStyle = `${color}88`; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(srcX,H/2); ctx.lineTo(slitX-4,slitY1); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(srcX,H/2); ctx.lineTo(slitX-4,slitY2); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Mũi tên D
-  ctx.strokeStyle = '#7cb9ff'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(slitX,H-16); ctx.lineTo(W-40,H-16); ctx.stroke();
-  ctx.fillStyle = '#7cb9ff'; ctx.font = '10px Space Mono,monospace'; ctx.textAlign = 'center';
-  ctx.fillText('D = '+D+' m', (slitX+W-40)/2, H-5);
-  ctx.fillText('a = '+a+' mm', slitX+10, H/2);
-
-  // ====== PHẦN PHẢI: Vân giao thoa ======
-  const patW = W - diagW;
-  const patX = diagW;
-  const centerY = H / 2;
-  const pxPerMm = Math.min((H*0.44) / Math.max(orders * i_mm, 1), 200);
-  const i_px = i_mm * pxPerMm;
-
-  // Vẽ vân theo chiều dọc (thực tế hơn)
-  for(let y = 0; y < H; y++) {
-    const dist = Math.abs(y - centerY);
-    const intensity = Math.pow(Math.cos(Math.PI * dist / Math.max(i_px,1)), 2);
-    if(intensity > 0.05) {
-      ctx.fillStyle = color;
-      ctx.globalAlpha = intensity * 0.9;
-      ctx.fillRect(patX, y, patW - 45, 1);
-    }
+  // ---- Vẽ hệ vân ----
+  for (let px = 0; px < W; px++) {
+    const mmX = (px - centerX) / scaleX;
+    const intensity = Math.pow(Math.cos(Math.PI * mmX / i_mm), 2);
+    ctx.globalAlpha = intensity * 0.92;
+    ctx.fillStyle = colorStr;
+    ctx.fillRect(px, 0, 1, patternH);
   }
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = 1.0;
 
-  // Màn chắn phải
-  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 5;
-  ctx.beginPath(); ctx.moveTo(W-42,0); ctx.lineTo(W-42,H); ctx.stroke();
-  ctx.fillStyle = '#4a5568'; ctx.fillRect(W-42,0,42,H);
-  ctx.fillStyle = '#a0aec0'; ctx.font = 'bold 10px Space Mono,monospace'; ctx.textAlign = 'center';
-  ctx.fillText('Màn', W-21, H/2-4); ctx.fillText('E', W-21, H/2+10);
-
-  // Tia sáng từ 2 khe ra màn
-  ctx.setLineDash([2,4]);
-  ctx.strokeStyle = `${color}55`; ctx.lineWidth = 1;
-  for(let k = -Math.min(orders,4); k <= Math.min(orders,4); k++) {
-    const y = centerY + k * i_px;
-    if(y > 0 && y < H) {
-      ctx.beginPath(); ctx.moveTo(slitX+5,slitY1); ctx.lineTo(W-43,y); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(slitX+5,slitY2); ctx.lineTo(W-43,y); ctx.stroke();
-    }
-  }
-  ctx.setLineDash([]);
-
-  // Nhãn bậc vân
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px Space Mono,monospace'; ctx.textAlign = 'right';
-  for(let k = -orders; k <= orders; k++) {
-    const y = centerY + k * i_px;
-    if(y > 10 && y < H-10) {
-      ctx.fillStyle = k === 0 ? '#ffd966' : 'rgba(255,255,255,0.7)';
-      ctx.fillText(k === 0 ? 'k=0' : 'k='+k, W-46, y+4);
-      // Vạch nhỏ
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(W-43,y); ctx.lineTo(patX+8,y); ctx.stroke();
-    }
+  // ---- Nhãn vân sáng (k=0,±1,±2...) ----
+  ctx.font = 'bold 9px "Space Mono", monospace';
+  ctx.textAlign = 'center';
+  for (let k = -orders; k <= orders; k++) {
+    const px = centerX + k * i_mm * scaleX;
+    if (px < 4 || px > W-4) continue;
+    ctx.strokeStyle = k === 0 ? 'rgba(231,76,60,0.7)' : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = k === 0 ? 1.5 : 1;
+    ctx.setLineDash(k === 0 ? [] : [3,3]);
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, patternH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = k === 0 ? '#e74c3c' : 'rgba(255,255,255,0.6)';
+    ctx.fillText(k === 0 ? 'k=0' : (k > 0 ? `+${k}` : `${k}`), px, patternH - 6);
   }
 
-  // Tiêu đề
-  ctx.fillStyle = '#7cb9ff'; ctx.font = '11px Space Mono,monospace'; ctx.textAlign = 'left';
-  ctx.fillText(`λ=${lambda}nm  i=${i_mm.toFixed(2)}mm`, patX+10, 18);
+  // ---- Thước đo ở đáy ----
+  const rulerY = patternH;
+  ctx.fillStyle = '#0e1520'; ctx.fillRect(0, rulerY, W, rulerH);
+  ctx.strokeStyle = '#2a3a55'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, rulerY); ctx.lineTo(W, rulerY); ctx.stroke();
+
+  // Vạch mm
+  const mmStep = scaleX > 25 ? 1 : (scaleX > 10 ? 2 : 5);
+  const mmRange = Math.ceil(halfW / scaleX) + 2;
+  for (let mm = -mmRange; mm <= mmRange; mm += 0.5) {
+    const px = centerX + mm * scaleX;
+    if (px < 0 || px > W) continue;
+    const isMajor = Number.isInteger(mm) && mm % mmStep === 0;
+    const isMid = mm % 0.5 === 0 && !Number.isInteger(mm);
+    ctx.strokeStyle = isMajor ? '#445' : '#2a3a4a';
+    ctx.lineWidth = isMajor ? 1.2 : 0.8;
+    ctx.beginPath();
+    ctx.moveTo(px, rulerY + 2);
+    ctx.lineTo(px, rulerY + (isMajor ? 18 : 10));
+    ctx.stroke();
+    if (isMajor) {
+      ctx.fillStyle = '#6a8aaa';
+      ctx.font = '9px "Space Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(mm + 'mm', px, rulerY + 30);
+    }
+  }
+  // Đường giữa
+  ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(centerX, rulerY); ctx.lineTo(centerX, rulerY + 22); ctx.stroke();
+
+  // ---- Thông số góc trên ----
+  ctx.font = '10px "Space Mono", monospace';
+  ctx.textAlign = 'left'; ctx.fillStyle = '#7cb9ff';
+  ctx.fillText(`λ = ${lambda} nm  |  a = ${a} mm  |  D = ${D} m  |  i = ${i_mm.toFixed(3)} mm`, 10, 16);
+
+  // ---- Sơ đồ nguồn khe nhỏ bên trái ----
+  const slitDraw = (x0, yc) => {
+    ctx.fillStyle = '#334';
+    ctx.fillRect(x0, yc - 60, 6, 44);
+    ctx.fillRect(x0, yc + 16, 6, 44);
+    ctx.strokeStyle = '#f39c12'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0+6, yc - 14); ctx.lineTo(x0+6, yc + 14); ctx.stroke();
+    ctx.fillStyle = '#f39c12'; ctx.font = '8px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('S₁', x0+8, yc - 6);
+    ctx.fillText('S₂', x0+8, yc + 12);
+  };
+  slitDraw(2, patternH/2);
 }
 
 function resetYoung() {
@@ -1669,17 +1918,15 @@ function resetYoung() {
   document.getElementById('young-orders').value = 7;
   runYoung();
 }
-
-
 /* ==================== ĐỘNG NĂNG - THẾ NĂNG ==================== */
 let energyRunning = false, energyRAF = null;
 let kePhase = 0, peY = 0;
 
 function switchEnergyTab(tab) {
-  document.getElementById('tab-ke').style.borderBottomColor = tab === 'ke' ? '#1976d2' : 'transparent';
-  document.getElementById('tab-ke').style.color = tab === 'ke' ? '#1976d2' : 'var(--muted)';
-  document.getElementById('tab-pe').style.borderBottomColor = tab === 'pe' ? '#1976d2' : 'transparent';
-  document.getElementById('tab-pe').style.color = tab === 'pe' ? '#1976d2' : 'var(--muted)';
+  const tabKe = document.getElementById('tab-ke');
+  const tabPe = document.getElementById('tab-pe');
+  tabKe.classList.toggle('active', tab === 'ke');
+  tabPe.classList.toggle('active', tab === 'pe');
   document.getElementById('panel-ke').style.display = tab === 'ke' ? 'block' : 'none';
   document.getElementById('panel-pe').style.display = tab === 'pe' ? 'block' : 'none';
   if(tab === 'ke') resetKE(); else resetPE();
@@ -1716,67 +1963,142 @@ function drawKEFrame() {
   const c = document.getElementById('ke-canvas'); if(!c) return;
   const ctx = c.getContext('2d'); const W = c.width, H = c.height;
   ctx.clearRect(0,0,W,H);
-  // Sky
+
+  // Sky gradient
   const sky = ctx.createLinearGradient(0,0,0,H-40);
-  sky.addColorStop(0,'#d0f0fc'); sky.addColorStop(1,'#e8f8f0');
+  sky.addColorStop(0,'#87CEEB'); sky.addColorStop(0.6,'#b0e0f8'); sky.addColorStop(1,'#c8f0e8');
   ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
-  // Track
-  ctx.fillStyle = '#b2bec3'; ctx.fillRect(0, H-42, W, 6);
-  ctx.fillStyle = '#636e72';
-  for(let x = -(kePhase%50); x < W; x += 50) { ctx.fillRect(x, H-42, 25, 6); }
-  // Road markings
-  ctx.strokeStyle = '#fdcb6e'; ctx.lineWidth = 2; ctx.setLineDash([20,15]);
-  ctx.beginPath(); ctx.moveTo(0, H-28); ctx.lineTo(W, H-28); ctx.stroke();
+
+  // Clouds
+  function cloud(x, y, r) {
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    [0,r*0.6,-r*0.6,r*1.1,-r*1.1].forEach((dx,i) => {
+      ctx.beginPath(); ctx.arc(x+dx, y+(i%2===0?0:-r*0.2), r*(i===0?1:0.72), 0, Math.PI*2); ctx.fill();
+    });
+  }
+  cloud(80, 30, 22); cloud(300, 20, 18); cloud(520, 38, 25); cloud(650, 18, 16);
+
+  // Road surface
+  ctx.fillStyle = '#4a5568'; ctx.fillRect(0, H-50, W, 50);
+  ctx.fillStyle = '#2d3748'; ctx.fillRect(0, H-50, W, 8);
+  // Road dashes
+  ctx.strokeStyle = '#fdcb6e'; ctx.lineWidth = 3; ctx.setLineDash([28,20]);
+  ctx.beginPath(); ctx.moveTo(0, H-26); ctx.lineTo(W, H-26); ctx.stroke();
   ctx.setLineDash([]);
-  
+  // Road markings animated
+  ctx.fillStyle = '#718096';
+  for(let x = -(kePhase%80); x < W; x += 80) { ctx.fillRect(x, H-50, 40, 8); }
+
+  // Buildings in background
+  const bColors = ['#2c3e50','#34495e','#2e4057','#1a252f'];
+  [[30,80,40,H-50],[100,60,35,H-50],[160,100,50,H-50],[550,70,45,H-50],[620,90,38,H-50]].forEach(([bx,bh,bw,by],i) => {
+    ctx.fillStyle = bColors[i%bColors.length];
+    ctx.fillRect(bx, by-bh, bw, bh);
+    // Windows
+    ctx.fillStyle = 'rgba(255,235,150,0.5)';
+    for(let wy=by-bh+8; wy<by-8; wy+=14)
+      for(let wx=bx+5; wx<bx+bw-5; wx+=12)
+        ctx.fillRect(wx, wy, 6, 8);
+  });
+
   const v = parseFloat(document.getElementById('ke-velocity').value) || 5;
   const m = parseFloat(document.getElementById('ke-mass').value) || 60;
   const ke = 0.5 * m * v * v;
-  const cx = 120, cy = H - 80;
-  
-  // Runner shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.1)';
-  ctx.beginPath(); ctx.ellipse(cx, H-42, 20, 5, 0, 0, Math.PI*2); ctx.fill();
-  
-  // Runner body (stick figure running)
-  const bounce = Math.sin(kePhase * 0.12) * 4;
-  ctx.fillStyle = '#2d3436'; // body
-  ctx.beginPath(); ctx.arc(cx, cy-20+bounce, 10, 0, Math.PI*2); ctx.fill(); // head
-  ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(cx, cy-10+bounce); ctx.lineTo(cx, cy+14+bounce); ctx.stroke(); // torso
-  
-  // Legs animated
-  const legAng = Math.sin(kePhase * 0.18) * 0.5;
-  ctx.beginPath(); ctx.moveTo(cx, cy+14+bounce);
-  ctx.lineTo(cx + Math.sin(legAng)*18, cy+34+bounce); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx, cy+14+bounce);
-  ctx.lineTo(cx - Math.sin(legAng)*18, cy+34+bounce); ctx.stroke();
+
+  // Runner position
+  const rx = 130, ry = H - 50;
+  const bounce = Math.sin(kePhase * 0.13) * 5;
+  const t = kePhase;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(rx, ry, 22, 5, 0, 0, Math.PI*2); ctx.fill();
+
+  // ---- Detailed runner ----
+  ctx.save();
+  ctx.translate(rx, ry + bounce);
+
+  // Shoes
+  const legSwing = Math.sin(t * 0.18) * 0.6;
+  // Left leg
+  const lLegAng = legSwing;
+  const lFootX = Math.sin(lLegAng)*22, lKneeX = Math.sin(lLegAng)*12;
+  const lLegY = -8, lKneeY = -24, lFootY = 0;
+  ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(lKneeX, lKneeY); ctx.lineTo(lFootX, lLegY); ctx.stroke();
+  ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.ellipse(lFootX, lLegY, 10, 5, lLegAng*0.3, 0, Math.PI*2); ctx.fill();
+  // Right leg
+  const rLegAng = -legSwing;
+  const rFootX = Math.sin(rLegAng)*22, rKneeX = Math.sin(rLegAng)*12;
+  ctx.beginPath(); ctx.moveTo(0, -30); ctx.lineTo(rKneeX, lKneeY); ctx.lineTo(rFootX, lLegY); ctx.stroke();
+  ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.ellipse(rFootX, lLegY, 10, 5, rLegAng*0.3, 0, Math.PI*2); ctx.fill();
+
+  // Shorts
+  ctx.fillStyle = '#2980b9';
+  ctx.beginPath(); ctx.ellipse(0, -32, 12, 8, 0, 0, Math.PI*2); ctx.fill();
+
+  // Torso – jersey
+  const jerseyGrad = ctx.createLinearGradient(-12,-60,12,-30);
+  jerseyGrad.addColorStop(0,'#e74c3c'); jerseyGrad.addColorStop(1,'#c0392b');
+  ctx.fillStyle = jerseyGrad;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-10,-62,20,30,3) : ctx.fillRect(-10,-62,20,30);
+  ctx.fill();
+  // Number on jersey
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('1', 0, -44);
+
   // Arms
-  ctx.beginPath(); ctx.moveTo(cx, cy-4+bounce);
-  ctx.lineTo(cx + Math.cos(legAng)*16, cy+6+bounce); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx, cy-4+bounce);
-  ctx.lineTo(cx - Math.cos(legAng)*16, cy+6+bounce); ctx.stroke();
+  const armSwing = -legSwing * 0.7;
+  ctx.strokeStyle = '#F5CBA7'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-4, -54);
+  ctx.lineTo(-4 + Math.sin(armSwing)*20, -40 + Math.cos(armSwing)*10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4, -54);
+  ctx.lineTo(4 - Math.sin(armSwing)*20, -40 + Math.cos(armSwing)*10); ctx.stroke();
+
+  // Head
+  ctx.fillStyle = '#F5CBA7';
+  ctx.shadowBlur = 4; ctx.shadowColor = 'rgba(0,0,0,0.2)';
+  ctx.beginPath(); ctx.arc(0, -72, 12, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Hair
+  ctx.fillStyle = '#2c1810';
+  ctx.beginPath(); ctx.arc(0, -79, 8, Math.PI, 0); ctx.fill();
+  // Face
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(-4, -71, 2, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4, -71, 2, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, -68, 4, 0.2, Math.PI-0.2); ctx.stroke();
+  // Headband
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0, -72, 12, -Math.PI*0.7, -Math.PI*0.3); ctx.stroke();
+
+  ctx.restore();
 
   // Velocity arrow
-  ctx.strokeStyle = '#e17055'; ctx.lineWidth = 2;
-  const arrowLen = Math.min(v * 8, 120);
-  ctx.beginPath(); ctx.moveTo(cx+15, cy+bounce); ctx.lineTo(cx+15+arrowLen, cy+bounce); ctx.stroke();
+  ctx.strokeStyle = '#e17055'; ctx.lineWidth = 2.5;
+  const arrowLen = Math.min(v * 10, 140);
+  ctx.shadowBlur = 6; ctx.shadowColor = '#e17055';
+  ctx.beginPath(); ctx.moveTo(rx+18, ry-55+bounce); ctx.lineTo(rx+18+arrowLen, ry-55+bounce); ctx.stroke();
   ctx.fillStyle = '#e17055';
-  ctx.beginPath(); ctx.moveTo(cx+15+arrowLen+8, cy+bounce); ctx.lineTo(cx+15+arrowLen-4, cy+bounce-4); ctx.lineTo(cx+15+arrowLen-4, cy+bounce+4); ctx.fill();
-  ctx.font = 'bold 11px Space Mono,monospace'; ctx.fillText('v='+v+'m/s', cx+15+arrowLen/2, cy+bounce-8);
+  ctx.beginPath(); ctx.moveTo(rx+26+arrowLen, ry-55+bounce); ctx.lineTo(rx+12+arrowLen, ry-61+bounce); ctx.lineTo(rx+12+arrowLen, ry-49+bounce); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.font = 'bold 11px Space Mono,monospace'; ctx.fillStyle = '#e17055'; ctx.textAlign = 'center';
+  ctx.fillText('v = '+v+' m/s', rx+18+arrowLen/2, ry-66+bounce);
 
   // KE bar
-  const barX = W - 120, barY = 20, barMaxH = H - 80;
-  const barFill = Math.min(ke / 10000, 1);
-  ctx.fillStyle = '#dfe6e9'; ctx.fillRect(barX, barY, 30, barMaxH);
-  const keGrad = ctx.createLinearGradient(0,barY+barMaxH,0,barY+barMaxH*(1-barFill));
-  keGrad.addColorStop(0,'#fdcb6e'); keGrad.addColorStop(1,'#e17055');
+  const barX = W - 100, barY = 16, barMaxH = H - 80;
+  const barFill = Math.min(ke / 15000, 1);
+  ctx.fillStyle = '#2d3748'; ctx.fillRect(barX, barY, 28, barMaxH);
+  const keGrad = ctx.createLinearGradient(0,barY+barMaxH,0,barY);
+  keGrad.addColorStop(0,'#fdcb6e'); keGrad.addColorStop(0.5,'#e17055'); keGrad.addColorStop(1,'#d63031');
   ctx.fillStyle = keGrad;
-  ctx.fillRect(barX, barY+barMaxH*(1-barFill), 30, barMaxH*barFill);
-  ctx.strokeStyle='#b2bec3'; ctx.lineWidth=1; ctx.strokeRect(barX,barY,30,barMaxH);
-  ctx.fillStyle='#2d3436'; ctx.font='10px Nunito,sans-serif'; ctx.textAlign='center';
-  ctx.fillText('Wđ', barX+15, barY+barMaxH+14);
-  ctx.fillText(ke.toFixed(0)+'J', barX+15, barY+barMaxH*(1-barFill)-4);
+  ctx.fillRect(barX, barY+barMaxH*(1-barFill), 28, barMaxH*barFill);
+  ctx.strokeStyle='#4a5568'; ctx.lineWidth=1; ctx.strokeRect(barX,barY,28,barMaxH);
+  ctx.fillStyle='#2d3436'; ctx.font='bold 10px Nunito,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Wđ', barX+14, barY+barMaxH+14);
+  ctx.fillStyle='#e17055'; ctx.font='bold 9px monospace';
+  ctx.fillText(ke.toFixed(0)+'J', barX+14, Math.max(barY+barMaxH*(1-barFill)-5, barY+12));
 }
 
 function calcPE() {
@@ -1877,130 +2199,234 @@ function drawPEFrame() {
 
 
 /* ==================== MOMENT LỰC ==================== */
-function updateTorque() {
+let torqueRunning = false, torqueRAF = null, torqueAngle = 0, torqueOmega = 0, torqueLastTime = null;
+
+function updateTorqueDisplay() {
   const F1 = parseFloat(document.getElementById('F1-torque').value) || 0;
   const d1 = parseFloat(document.getElementById('d1-torque').value) || 0;
   const F2 = parseFloat(document.getElementById('F2-torque').value) || 0;
   const d2 = parseFloat(document.getElementById('d2-torque').value) || 0;
-
-  // Tính toán Moment
-  const M1 = F1 * d1;
-  const M2 = F2 * d2;
-  const diff = M2 - M1;
-
-  // Cập nhật giá trị hiển thị (theo ID của file index cũ)
+  const M1 = F1 * d1, M2 = F2 * d2, diff = M2 - M1;
   const m1El = document.getElementById('M1-val');
   if (m1El) m1El.innerHTML = M1.toFixed(1) + '<span class="dc-unit">Nm</span>';
-  
   const m2El = document.getElementById('M2-val');
   if (m2El) m2El.innerHTML = M2.toFixed(1) + '<span class="dc-unit">Nm</span>';
-
-  // Hiển thị kết quả cân bằng
   const resEl = document.getElementById('torque-result');
   let res = '⚖ Cân bằng', color = '#27ae60';
-  if(diff > 0.1) { res = '↻ Quay phải'; color = '#e74c3c'; } 
-  else if(diff < -0.1) { res = '↺ Quay trái'; color = '#e74c3c'; }
+  if (diff > 0.1) { res = '↻ Quay phải'; color = '#e74c3c'; }
+  else if (diff < -0.1) { res = '↺ Quay trái'; color = '#e74c3c'; }
   if (resEl) resEl.innerHTML = `<span style="color:${color}; font-weight:800;">${res}</span>`;
   const diffEl = document.getElementById('torque-diff');
   if (diffEl) diffEl.innerHTML = Math.abs(diff).toFixed(1) + '<span class="dc-unit">Nm</span>';
   const fmEl = document.getElementById('torque-formula-display');
   if (fmEl) fmEl.innerHTML = `M₁ = ${F1} × ${d1} = <b>${M1.toFixed(1)} Nm</b> &nbsp;|&nbsp; M₂ = ${F2} × ${d2} = <b>${M2.toFixed(1)} Nm</b> &nbsp;→ ${res}`;
+  drawTorqueFrame(torqueAngle);
+}
 
-  // Vẽ mô phỏng
-  const c = document.getElementById('torque-canvas'); 
-  if(!c) return;
-  const ctx = c.getContext('2d'); 
-  const W = c.width, H = c.height;
-  ctx.clearRect(0,0,W,H);
-  
-  // Nền gradient đẹp hơn
-  const bg = ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#e8f8f5'); bg.addColorStop(1,'#d1f2eb');
-  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
-  // Lưới nhẹ
-  ctx.strokeStyle='rgba(39,174,96,0.12)'; ctx.lineWidth=1;
-  for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-  
-  const cx = W/2, cy = H/2 + 30;
-  const pxPerM = W/4.5; 
-  
-  // Vẽ điểm tựa tam giác
-  const gtx = cx, gty = cy + 6;
-  ctx.fillStyle = '#7f8c8d';
-  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(0,0,0,0.2)';
-  ctx.beginPath(); ctx.moveTo(gtx,gty); ctx.lineTo(gtx-24,gty+44); ctx.lineTo(gtx+24,gty+44); ctx.closePath(); ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle='#bdc3c7'; ctx.fillRect(gtx-40,gty+44,80,8);
+function updateTorque() { updateTorqueDisplay(); }
 
-  // Vẽ đòn bẩy và quả nặng
-  ctx.save(); 
-  ctx.translate(cx, cy);
-  let angle = Math.max(Math.min(diff * 0.015, 0.35), -0.35);
-  ctx.rotate(angle);
-  
-  // Bóng thanh đòn bẩy
-  ctx.shadowBlur = 12; ctx.shadowColor = 'rgba(0,0,0,0.25)';
-  // Thanh đòn bẩy
-  const barGrad = ctx.createLinearGradient(0,-6,0,6);
-  barGrad.addColorStop(0,'#9b59b6'); barGrad.addColorStop(0.5,'#8e44ad'); barGrad.addColorStop(1,'#6c3483');
-  ctx.fillStyle = barGrad; 
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-W/2+40,-6,W-80,12,3) : ctx.fillRect(-W/2+40,-6,W-80,12);
-  ctx.fill(); ctx.shadowBlur = 0;
-  // Vạch scale
-  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1;
-  for(let i=-3;i<=3;i++){const sx=i*pxPerM; ctx.beginPath();ctx.moveTo(sx,-8);ctx.lineTo(sx,8);ctx.stroke();}
-  
-  // Quả nặng trái (xanh lam)
-  const s1 = Math.max(22, Math.min(20 + F1*0.4, 55));
-  const s2 = Math.max(22, Math.min(20 + F2*0.4, 55));
-  const wx1 = -d1*pxPerM, wx2 = d2*pxPerM;
+function startTorque() {
+  const F1 = parseFloat(document.getElementById('F1-torque').value) || 0;
+  const d1 = parseFloat(document.getElementById('d1-torque').value) || 0;
+  const F2 = parseFloat(document.getElementById('F2-torque').value) || 0;
+  const d2 = parseFloat(document.getElementById('d2-torque').value) || 0;
+  const diff = F2*d2 - F1*d1;
+  if (Math.abs(diff) < 0.1) {
+    // Balanced – small oscillation
+    torqueAngle = 0; torqueOmega = 0.002;
+  }
+  torqueRunning = !torqueRunning;
+  const btn = document.getElementById('torque-run-btn');
+  if (torqueRunning) {
+    btn.textContent = '⏸ DỪNG';
+    torqueLastTime = null;
+    requestAnimationFrame(torqueLoop);
+  } else {
+    btn.textContent = '▶ CHẠY';
+    cancelAnimationFrame(torqueRAF);
+  }
+}
 
-  // Dây treo trái
-  ctx.strokeStyle='#2980b9'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(wx1,-(6+s1)); ctx.lineTo(wx1,-6); ctx.stroke();
-
-  const g1 = ctx.createLinearGradient(wx1-s1/2,0,wx1+s1/2,0);
-  g1.addColorStop(0,'#2980b9'); g1.addColorStop(0.5,'#3498db'); g1.addColorStop(1,'#1a5276');
-  ctx.fillStyle = g1;
-  ctx.shadowBlur = 10; ctx.shadowColor = '#3498db55';
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(wx1-s1/2,-(6+s1),s1,s1,4) : ctx.fillRect(wx1-s1/2,-(6+s1),s1,s1);
-  ctx.fill(); ctx.shadowBlur=0;
-  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.min(13,s1/2.5)}px monospace`; ctx.textAlign='center';
-  ctx.fillText(F1+'N', wx1, -(6+s1/2)+4);
-  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font=`9px monospace`;
-  ctx.fillText('d₁='+d1+'m', wx1, -(6+s1)-10);
-
-  // Dây treo phải
-  ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(wx2,-(6+s2)); ctx.lineTo(wx2,-6); ctx.stroke();
-
-  const g2 = ctx.createLinearGradient(wx2-s2/2,0,wx2+s2/2,0);
-  g2.addColorStop(0,'#c0392b'); g2.addColorStop(0.5,'#e74c3c'); g2.addColorStop(1,'#922b21');
-  ctx.fillStyle = g2;
-  ctx.shadowBlur = 10; ctx.shadowColor = '#e74c3c55';
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(wx2-s2/2,-(6+s2),s2,s2,4) : ctx.fillRect(wx2-s2/2,-(6+s2),s2,s2);
-  ctx.fill(); ctx.shadowBlur=0;
-  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.min(13,s2/2.5)}px monospace`; ctx.textAlign='center';
-  ctx.fillText(F2+'N', wx2, -(6+s2/2)+4);
-  ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font=`9px monospace`;
-  ctx.fillText('d₂='+d2+'m', wx2, -(6+s2)-10);
-
-  ctx.restore();
-  
-  // Nhãn M1, M2
-  ctx.fillStyle='#2471a3'; ctx.font='bold 12px Nunito,sans-serif'; ctx.textAlign='left';
-  ctx.fillText(`M₁ = ${M1.toFixed(1)} Nm`, 16, 24);
-  ctx.fillStyle='#c0392b'; ctx.textAlign='right';
-  ctx.fillText(`M₂ = ${M2.toFixed(1)} Nm`, W-16, 24);
+function torqueLoop(ts) {
+  if (!torqueLastTime) torqueLastTime = ts;
+  const dt = Math.min((ts - torqueLastTime)/1000, 0.05); torqueLastTime = ts;
+  const F1 = parseFloat(document.getElementById('F1-torque').value) || 0;
+  const d1 = parseFloat(document.getElementById('d1-torque').value) || 0;
+  const F2 = parseFloat(document.getElementById('F2-torque').value) || 0;
+  const d2 = parseFloat(document.getElementById('d2-torque').value) || 0;
+  const diff = F2*d2 - F1*d1; // positive = clockwise
+  const maxAngle = 0.55;
+  // Angular acceleration proportional to net moment
+  const alpha = diff * 0.008;
+  torqueOmega += alpha * dt;
+  torqueOmega *= 0.96; // damping
+  torqueAngle += torqueOmega * dt;
+  torqueAngle = Math.max(-maxAngle, Math.min(maxAngle, torqueAngle));
+  // Stop if at limit
+  if (Math.abs(torqueAngle) >= maxAngle * 0.98 && Math.abs(diff) > 0.5) {
+    torqueOmega = 0;
+  }
+  drawTorqueFrame(torqueAngle);
+  updateTorqueDisplay();
+  if (torqueRunning) torqueRAF = requestAnimationFrame(torqueLoop);
 }
 
 function resetTorque() {
-  document.getElementById('F1-torque').value = 10; 
+  torqueRunning = false; cancelAnimationFrame(torqueRAF);
+  torqueAngle = 0; torqueOmega = 0; torqueLastTime = null;
+  document.getElementById('F1-torque').value = 10;
   document.getElementById('d1-torque').value = 0.8;
-  document.getElementById('F2-torque').value = 20; 
+  document.getElementById('F2-torque').value = 20;
   document.getElementById('d2-torque').value = 0.4;
-  updateTorque();
+  const btn = document.getElementById('torque-run-btn');
+  if (btn) btn.textContent = '▶ CHẠY';
+  updateTorqueDisplay();
+}
+
+function drawTorqueFrame(angle) {
+  const c = document.getElementById('torque-canvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#e8f8f5'); bg.addColorStop(1,'#d1f2eb');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='rgba(39,174,96,0.10)'; ctx.lineWidth=1;
+  for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  const F1 = parseFloat(document.getElementById('F1-torque').value) || 0;
+  const d1 = parseFloat(document.getElementById('d1-torque').value) || 0;
+  const F2 = parseFloat(document.getElementById('F2-torque').value) || 0;
+  const d2 = parseFloat(document.getElementById('d2-torque').value) || 0;
+  const M1 = F1 * d1, M2 = F2 * d2;
+
+  const cx = W/2, cy = H/2 + 20;
+  const pxPerM = W/5;
+
+  // Pivot triangle
+  ctx.fillStyle = '#7f8c8d';
+  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(0,0,0,0.2)';
+  ctx.beginPath(); ctx.moveTo(cx,cy+6); ctx.lineTo(cx-26,cy+52); ctx.lineTo(cx+26,cy+52); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle='#bdc3c7'; ctx.fillRect(cx-44,cy+52,88,10);
+
+  // Ground line
+  ctx.strokeStyle='#95a5a6'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-200, cy+62); ctx.lineTo(cx+200, cy+62); ctx.stroke();
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  // Lever bar
+  ctx.shadowBlur = 14; ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  const barGrad = ctx.createLinearGradient(0,-6,0,6);
+  barGrad.addColorStop(0,'#9b59b6'); barGrad.addColorStop(0.5,'#8e44ad'); barGrad.addColorStop(1,'#6c3483');
+  ctx.fillStyle = barGrad;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-W/2+30,-6,W-60,12,3) : ctx.fillRect(-W/2+30,-6,W-60,12);
+  ctx.fill(); ctx.shadowBlur = 0;
+  // Scale marks
+  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=1;
+  for(let i=-4;i<=4;i++){const sx=i*pxPerM; ctx.beginPath();ctx.moveTo(sx,-8);ctx.lineTo(sx,8);ctx.stroke();}
+  ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='8px monospace'; ctx.textAlign='center';
+  for(let i=-4;i<=4;i++){ctx.fillText(Math.abs(i)+'m', i*pxPerM, 20);}
+
+  const wx1 = -d1*pxPerM, wx2 = d2*pxPerM;
+  const s1 = Math.max(24, Math.min(20 + F1*0.45, 58));
+  const s2 = Math.max(24, Math.min(20 + F2*0.45, 58));
+
+  // ===== LEFT WEIGHT (M1) =====
+  // Vertical force arrow (down)
+  const arr1Len = Math.min(50, M1 * 3 + 15);
+  ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 6; ctx.shadowColor = '#1565c0';
+  ctx.beginPath(); ctx.moveTo(wx1, -(6+s1)); ctx.lineTo(wx1, -(6+s1)-arr1Len); ctx.stroke();
+  ctx.fillStyle = '#1565c0';
+  ctx.beginPath(); ctx.moveTo(wx1, -(6+s1)); ctx.lineTo(wx1-5, -(6+s1)-12); ctx.lineTo(wx1+5, -(6+s1)-12); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Arm span line (d1)
+  ctx.strokeStyle = 'rgba(21,101,192,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(0, 25); ctx.lineTo(wx1, 25); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#1565c0'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('d₁='+d1+'m', wx1/2, 38);
+  // Curved moment arrow (counter-clockwise = left side down)
+  ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2; ctx.shadowBlur = 6; ctx.shadowColor = '#1565c0';
+  ctx.beginPath(); ctx.arc(0, 0, 45, Math.PI*1.1, Math.PI*1.7, false); ctx.stroke();
+  ctx.fillStyle = '#1565c0';
+  ctx.beginPath();
+  const ang1e = Math.PI*1.7;
+  ctx.moveTo(45*Math.cos(ang1e), 45*Math.sin(ang1e));
+  ctx.lineTo(45*Math.cos(ang1e-0.25)-6*Math.sin(ang1e-0.25), 45*Math.sin(ang1e-0.25)+6*Math.cos(ang1e-0.25));
+  ctx.lineTo(45*Math.cos(ang1e+0.25)-6*Math.sin(ang1e+0.25), 45*Math.sin(ang1e+0.25)+6*Math.cos(ang1e+0.25));
+  ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+  // String
+  ctx.strokeStyle='#2980b9'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(wx1,-(6+s1)); ctx.lineTo(wx1,-6); ctx.stroke();
+  // Block
+  const g1 = ctx.createLinearGradient(wx1-s1/2,0,wx1+s1/2,0);
+  g1.addColorStop(0,'#1565c0'); g1.addColorStop(0.5,'#1976d2'); g1.addColorStop(1,'#0d47a1');
+  ctx.fillStyle = g1; ctx.shadowBlur = 10; ctx.shadowColor = '#1976d255';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(wx1-s1/2,-(6+s1),s1,s1,4) : ctx.fillRect(wx1-s1/2,-(6+s1),s1,s1);
+  ctx.fill(); ctx.shadowBlur = 0;
+  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.min(13,s1/2.5)}px monospace`; ctx.textAlign='center';
+  ctx.fillText(F1+'N', wx1, -(6+s1/2)+4);
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='8px monospace';
+  ctx.fillText('M₁='+M1.toFixed(1)+'Nm', wx1, -(6+s1)-18);
+
+  // ===== RIGHT WEIGHT (M2) =====
+  const arr2Len = Math.min(50, M2 * 3 + 15);
+  ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 6; ctx.shadowColor = '#c0392b';
+  ctx.beginPath(); ctx.moveTo(wx2, -(6+s2)); ctx.lineTo(wx2, -(6+s2)-arr2Len); ctx.stroke();
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath(); ctx.moveTo(wx2, -(6+s2)); ctx.lineTo(wx2-5, -(6+s2)-12); ctx.lineTo(wx2+5, -(6+s2)-12); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(192,57,43,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(0, 25); ctx.lineTo(wx2, 25); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#c0392b'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('d₂='+d2+'m', wx2/2, 38);
+  // Curved moment arrow (clockwise = right side down)
+  ctx.strokeStyle = '#c0392b'; ctx.lineWidth = 2; ctx.shadowBlur = 6; ctx.shadowColor = '#c0392b';
+  ctx.beginPath(); ctx.arc(0, 0, 58, -Math.PI*0.7, -Math.PI*0.1, false); ctx.stroke();
+  ctx.fillStyle = '#c0392b';
+  const ang2e = -Math.PI*0.1;
+  ctx.beginPath();
+  ctx.moveTo(58*Math.cos(ang2e), 58*Math.sin(ang2e));
+  ctx.lineTo(58*Math.cos(ang2e-0.25)-7*Math.sin(ang2e-0.25), 58*Math.sin(ang2e-0.25)+7*Math.cos(ang2e-0.25));
+  ctx.lineTo(58*Math.cos(ang2e+0.25)-7*Math.sin(ang2e+0.25), 58*Math.sin(ang2e+0.25)+7*Math.cos(ang2e+0.25));
+  ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+  // String
+  ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(wx2,-(6+s2)); ctx.lineTo(wx2,-6); ctx.stroke();
+  // Block
+  const g2 = ctx.createLinearGradient(wx2-s2/2,0,wx2+s2/2,0);
+  g2.addColorStop(0,'#c0392b'); g2.addColorStop(0.5,'#e74c3c'); g2.addColorStop(1,'#922b21');
+  ctx.fillStyle = g2; ctx.shadowBlur = 10; ctx.shadowColor = '#e74c3c55';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(wx2-s2/2,-(6+s2),s2,s2,4) : ctx.fillRect(wx2-s2/2,-(6+s2),s2,s2);
+  ctx.fill(); ctx.shadowBlur = 0;
+  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.min(13,s2/2.5)}px monospace`; ctx.textAlign='center';
+  ctx.fillText(F2+'N', wx2, -(6+s2/2)+4);
+  ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='8px monospace';
+  ctx.fillText('M₂='+M2.toFixed(1)+'Nm', wx2, -(6+s2)-18);
+
+  ctx.restore();
+
+  // Labels
+  ctx.fillStyle='#1565c0'; ctx.font='bold 13px Nunito,sans-serif'; ctx.textAlign='left';
+  ctx.fillText(`M₁ = ${M1.toFixed(1)} Nm  ↺`, 16, 24);
+  ctx.fillStyle='#c0392b'; ctx.textAlign='right';
+  ctx.fillText(`↻  M₂ = ${M2.toFixed(1)} Nm`, W-16, 24);
+  // Angle display
+  const angDeg = (angle * 180 / Math.PI).toFixed(1);
+  ctx.fillStyle='#7f8c8d'; ctx.font='10px monospace'; ctx.textAlign='center';
+  ctx.fillText(`Góc nghiêng: ${angDeg}°`, W/2, H-12);
 }
 
 /* ==================== LẮP RÁP DNA ==================== */
@@ -2080,6 +2506,23 @@ const cellData = {
 };
 
 let currentOrganelle = null, cellCanvasSetup = false;
+let chipBoxOrganelle = null; // chỉ set khi click vào chip tên bào quan
+
+// Tọa độ hộp bao quanh từng bào quan (relative to cx,cy)
+function getOrganelleBounds(id, cx, cy) {
+  const boxes = {
+    wall:         { x: cx-215, y: cy-138, w: 430, h: 276 },
+    membrane:     { x: cx-195, y: cy-116, w: 390, h: 232 },
+    nucleus:      { x: cx-172, y: cy-82,  w: 88,  h: 88  },
+    vacuole:      { x: cx-128, y: cy-68,  w: 256, h: 156 },
+    chloroplast:  { x: cx-108, y: cy-80,  w: 272, h: 180 },
+    mitochondria: { x: cx-142, y: cy-96,  w: 260, h: 178 },
+    golgi:        { x: cx+40,  y: cy-52,  w: 92,  h: 104 },
+    er:           { x: cx-102, y: cy-70,  w: 86,  h: 62  },
+    ribosome:     { x: cx-112, y: cy-82,  w: 76,  h: 100 }
+  };
+  return boxes[id] || null;
+}
 
 function drawPlantCell() {
   const c = document.getElementById('cell-canvas'); if(!c) return;
@@ -2132,6 +2575,29 @@ function drawPlantCell() {
   [[cx-60,cy-30], [cx-40,cy-40], [cx-80,cy-60], [cx-50,cy-70], [cx-100,cy+10]].forEach(pos => {
     ctx.beginPath(); ctx.arc(pos[0], pos[1], 3, 0, Math.PI*2); ctx.fill();
   });
+
+  // ---- Vẽ hình chữ nhật vàng nét đứt khi click vào chip ----
+  if (chipBoxOrganelle) {
+    const b = getOrganelleBounds(chipBoxOrganelle, cx, cy);
+    if (b) {
+      ctx.save();
+      ctx.strokeStyle = '#f1c40f';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 5]);
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#f1c40f';
+      const pad = 8;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(b.x - pad, b.y - pad, b.w + pad*2, b.h + pad*2, 8);
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(b.x - pad, b.y - pad, b.w + pad*2, b.h + pad*2);
+      }
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
 }
 
 function setupCellEvents() {
@@ -2165,13 +2631,23 @@ function setupCellEvents() {
 
   c.addEventListener('click', (e) => {
     const clicked = detectOrganelle(e);
-    if(clicked) showOrganelleInfo(clicked);
+    if(clicked) {
+      chipBoxOrganelle = null; // click canvas: không vẽ hình chữ nhật
+      showOrganelleInfo(clicked);
+    }
   });
 
   cellCanvasSetup = true;
 }
 
 function highlightOrganelle(id) { currentOrganelle = id; drawPlantCell(); }
+
+// Gọi từ chip (tên bào quan): vẽ hình chữ nhật vàng nét đứt
+function showOrganelleInfoFromChip(id) {
+  chipBoxOrganelle = id;
+  showOrganelleInfo(id);
+}
+
 function showOrganelleInfo(id) {
   highlightOrganelle(id);
   document.querySelectorAll('.cell-chip').forEach(chip => {
@@ -2191,6 +2667,7 @@ function showOrganelleInfo(id) {
   else funEl.style.display = 'none';
 }
 function resetCellView() {
+  chipBoxOrganelle = null;
   highlightOrganelle(null);
   document.querySelectorAll('.cell-chip').forEach(c => c.classList.remove('active'));
   document.getElementById('organelle-info-panel').style.display = 'none';
