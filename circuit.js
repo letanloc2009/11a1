@@ -1,6 +1,32 @@
 /* ==================== CIRCUIT ==================== */
 let circuitClosed = false;
 
+// Tự động resize canvas theo kích thước hiển thị (PC/iPad/điện thoại)
+let circuitCanvasBound = false;
+function ensureCircuitCanvasSize() {
+  const c = document.getElementById('circuit-canvas');
+  if (!c || !c.parentElement) return;
+  const wrap = c.parentElement;
+  const cssW = Math.max(280, wrap.clientWidth || 700);
+  // giữ tỉ lệ gần giống thiết kế (700x320)
+  const cssH = Math.max(220, Math.round(cssW * (320 / 700)));
+  c.style.height = cssH + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  const newW = Math.round(cssW * dpr);
+  const newH = Math.round(cssH * dpr);
+  if (c.width !== newW || c.height !== newH) {
+    c.width = newW;
+    c.height = newH;
+  }
+  if (!circuitCanvasBound) {
+    circuitCanvasBound = true;
+    window.addEventListener('resize', () => {
+      ensureCircuitCanvasSize();
+      drawCircuit(circuitClosed, 0, 0);
+    }, { passive: true });
+  }
+}
+
 function setSwitch(closed) {
   circuitClosed = closed;
   runCircuit();
@@ -12,6 +38,7 @@ function resetCircuit() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '–<span class="dc-unit">' + (id==='circ-A'?'A':id==='circ-V'?'V':id==='circ-Rtotal'?'Ω':'W') + '</span>';
   });
+  ensureCircuitCanvasSize();
   drawCircuit(false, 0, 0);
 }
 
@@ -38,17 +65,20 @@ function runCircuit() {
 
 function drawCircuit(closed, I, E) {
   const c = document.getElementById('circuit-canvas'); if (!c) return;
+  ensureCircuitCanvasSize();
   const ctx = c.getContext('2d');
   const W = c.width, H = c.height;
   ctx.clearRect(0, 0, W, H);
 
-  // Nền phòng lab tối
-  const bg = ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#0a0f1a'); bg.addColorStop(1,'#0d1520');
-  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  // Nền phòng lab (sáng, dễ nhìn)
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#ffffff');
+  bg.addColorStop(1, '#eef6ff');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
 
   // Lưới nền nhẹ
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(13, 27, 42, 0.06)'; ctx.lineWidth = 1;
   for(let x=0; x<W; x+=30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
   for(let y=0; y<H; y+=30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -57,9 +87,9 @@ function drawCircuit(closed, I, E) {
   const R2 = parseFloat(document.getElementById('circuit-r2').value)||10;
   const RL = parseFloat(document.getElementById('circuit-lamp').value)||5;
   const glow = closed && I > 0.01;
-  const wireColor = glow ? '#ffd54f' : '#445566';
+  const wireColor = glow ? '#f9a825' : '#2c3e50';
   const lineW = glow ? 3 : 2;
-  const shadowC = glow ? '#ffd54f' : 'transparent';
+  const shadowC = glow ? 'rgba(249,168,37,0.85)' : 'transparent';
 
   function wire(x1,y1,x2,y2, color, lw, sh) {
     ctx.save();
@@ -70,23 +100,31 @@ function drawCircuit(closed, I, E) {
     ctx.restore();
   }
 
-  // Hàm vẽ điện trở (zig-zag chuẩn)
+  // Hàm vẽ điện trở (hình chữ nhật – kiểu IEC)
   function drawResistor(x, y, w, label, value) {
-    const h2 = 10, segs = 8;
+    const lead = Math.max(10, w * 0.18);
+    const bodyW = Math.max(18, w - lead * 2);
+    const bodyH = Math.max(16, Math.min(22, H * 0.06));
+    const yTop = y - bodyH / 2;
+    const xBody = x + lead;
+
+    // thân điện trở
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = glow ? '#fb8c00' : '#607d8b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(xBody, yTop, bodyW, bodyH, 4);
+    else ctx.rect(xBody, yTop, bodyW, bodyH);
+    ctx.fill(); ctx.stroke();
+
+    // nhãn
     ctx.fillStyle = '#1a2640';
-    ctx.strokeStyle = glow ? '#ffa726' : '#607d8b'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x, y);
-    for(let i = 0; i <= segs; i++) {
-      const px = x + (w/segs)*i;
-      const py = y + (i%2===0 ? -h2 : h2);
-      ctx.lineTo(px, py);
-    }
-    ctx.lineTo(x+w, y); ctx.stroke();
-    // Nhãn
-    ctx.fillStyle = '#b0c4de'; ctx.font = 'bold 11px Space Mono,monospace'; ctx.textAlign = 'center';
-    ctx.fillText(label, x+w/2, y-18);
-    ctx.fillStyle = '#7cb9ff'; ctx.font = '10px monospace';
-    ctx.fillText(value+'Ω', x+w/2, y+24);
+    ctx.font = 'bold 11px Space Mono,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x + w / 2, y - bodyH / 2 - 10);
+    ctx.fillStyle = '#1565c0';
+    ctx.font = '10px monospace';
+    ctx.fillText(value + 'Ω', x + w / 2, y + bodyH / 2 + 16);
   }
 
   // Hàm vẽ bóng đèn
@@ -94,7 +132,7 @@ function drawCircuit(closed, I, E) {
     ctx.save();
     if(glowing) { ctx.shadowBlur=30; ctx.shadowColor='#fff176'; }
     // Vòng tròn bóng đèn
-    ctx.strokeStyle = glowing ? '#ffd54f' : '#607d8b'; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = glowing ? '#fb8c00' : '#607d8b'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(cx, cy, 15, 0, Math.PI*2); ctx.stroke();
     // Dấu x bên trong
     ctx.lineWidth = 2;
@@ -106,7 +144,7 @@ function drawCircuit(closed, I, E) {
       ctx.globalAlpha = 1;
     }
     ctx.restore();
-    ctx.fillStyle = glowing ? '#ffd54f' : '#b0c4de';
+    ctx.fillStyle = glowing ? '#fb8c00' : '#1a2640';
     ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
     ctx.fillText(label, cx, cy - 20);
   }
@@ -115,8 +153,8 @@ function drawCircuit(closed, I, E) {
   function drawBattery(cx, cy, voltage) {
     const bw=14, bh=36;
     // Thân pin
-    ctx.fillStyle = '#1e3a5f';
-    ctx.strokeStyle = '#90caf9'; ctx.lineWidth = 2;
+    ctx.fillStyle = '#e3f2fd';
+    ctx.strokeStyle = '#1565c0'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx-bw/2-4,cy-bh/2-6,bw+8,bh+12,4): ctx.rect(cx-bw/2-4,cy-bh/2-6,bw+8,bh+12); ctx.fill(); ctx.stroke();
     // Vạch cực
     ctx.strokeStyle = '#ef5350'; ctx.lineWidth = 3; // cực dương (+)
@@ -128,9 +166,9 @@ function drawCircuit(closed, I, E) {
     ctx.fillText('+', cx, cy-bh/2-10);
     ctx.fillStyle = '#90caf9'; ctx.fillText('–', cx, cy+bh/2+12);
     // Giá trị E
-    ctx.fillStyle = '#ffe082'; ctx.font = 'bold 10px monospace';
+    ctx.fillStyle = '#fb8c00'; ctx.font = 'bold 10px monospace';
     ctx.fillText(voltage+'V', cx, cy+3);
-    ctx.fillStyle = '#7cb9ff'; ctx.font = '9px monospace'; ctx.fillText('Pin', cx, cy-8);
+    ctx.fillStyle = '#1565c0'; ctx.font = '9px monospace'; ctx.fillText('Pin', cx, cy-8);
   }
 
   // Hàm vẽ ampe kế
@@ -140,7 +178,7 @@ function drawCircuit(closed, I, E) {
     ctx.strokeStyle = glow ? '#69f0ae' : '#546e7a'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2); ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = '#aaffaa'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#1b5e20'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
     ctx.fillText('A', cx, cy+4);
     if(closed) {
       ctx.fillStyle = '#69f0ae'; ctx.font = '9px monospace';
@@ -154,7 +192,7 @@ function drawCircuit(closed, I, E) {
     ctx.strokeStyle = glow ? '#80b4ff' : '#546e7a'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2); ctx.stroke();
     ctx.restore();
-    ctx.fillStyle = '#aaccff'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#0d47a1'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
     ctx.fillText('V', cx, cy+4);
     if(closed) {
       ctx.fillStyle = '#80b4ff'; ctx.font = '9px monospace';
@@ -179,88 +217,121 @@ function drawCircuit(closed, I, E) {
 
 
 
+  // Tọa độ tương đối để mạch hiển thị ổn trên nhiều màn hình
+  const left = W * 0.10, right = W * 0.90;
+  const top = H * 0.22, bot = H * 0.82;
+  const mid = (top + bot) / 2;
+  const lampR = Math.max(14, Math.min(18, H * 0.07));
+  const rLen = Math.max(W * 0.08, Math.min(W * 0.14, (right - left) * 0.12));
+
   if(type === 'series') {
-    // Layout nối tiếp: pin → K → Ammeter → R1 → R2 → Lamp → về pin
-    // Đường chính: chữ nhật lớn
-    const left=60, right=640, top=80, bot=240;
-    const batX=left+30, batY=(top+bot)/2;
-    const swX=left+110, swY=top;
-    const amX=left+200, amY=top;
-    const r1X=left+280, r1Y=top;
-    const r2X=left+400, r2Y=top;
-    const lampX=right-40, lampY=(top+bot)/2;
+    // pin → K → A → R1 → R2 (trên) → đèn (bên phải) → về pin
+    // khung ngoài
+    wire(left, top, left, bot, wireColor, lineW, shadowC);
+    wire(left, bot, right, bot, wireColor, lineW, shadowC);
 
-    wire(left, top, left, bot, wireColor, lineW, shadowC); // dây trái (pin)
-    wire(left, bot, right, bot, wireColor, lineW, shadowC); // dây dưới
-    wire(right, bot, right, top, wireColor, lineW, shadowC); // dây phải (đèn)
-    wire(right, top, lampX+15, top, wireColor, lineW, shadowC);
-    wire(right, bot, right, lampY+15, wireColor, lineW, shadowC);
-    wire(left, top, swX-14, top, wireColor, lineW, shadowC);
-    wire(swX+14, top, amX-14, top, wireColor, lineW, shadowC);
-    wire(amX+14, top, r1X, top, wireColor, lineW, shadowC);
-    wire(r1X+60, top, r2X, top, wireColor, lineW, shadowC);
-    wire(r2X+60, top, lampX, top, wireColor, lineW, shadowC);
+    const batX = left, batY = mid;
+    const swX = left + (right-left) * 0.18, swY = top;
+    const amX = left + (right-left) * 0.32, amY = top;
+    const r1X = left + (right-left) * 0.42, rY = top;
+    const r2X = left + (right-left) * 0.58;
 
-    // Dây nối pin vào mạch
-    wire(left, batY-18, left, top, wireColor, lineW, shadowC);
-    wire(left, batY+18, left, bot, wireColor, lineW, shadowC);
+    // dây trên (tách đoạn để không đè lên dụng cụ)
+    wire(left, top, swX - 14, top, wireColor, lineW, shadowC);
+    wire(swX + 14, top, amX - 14, top, wireColor, lineW, shadowC);
+    wire(amX + 14, top, r1X, top, wireColor, lineW, shadowC);
+    wire(r1X + rLen, top, r2X, top, wireColor, lineW, shadowC);
+    wire(r2X + rLen, top, right, top, wireColor, lineW, shadowC);
 
-    drawBattery(batX-30, batY, E);
+    // ngắt dây phải để đặt đèn
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = '#000'; ctx.lineWidth = lineW + 4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(right, mid - lampR - 4); ctx.lineTo(right, mid + lampR + 4); ctx.stroke();
+    ctx.restore();
+    wire(right, top, right, mid - lampR, wireColor, lineW, shadowC);
+    wire(right, mid + lampR, right, bot, wireColor, lineW, shadowC);
+
+    drawBattery(batX, batY, E);
     drawSwitch(swX, swY, closed);
     drawAmmeter(amX, amY, I.toFixed(2));
-    drawResistor(r1X, r1Y, 60, 'R₁', R1);
-    drawResistor(r2X, r2Y, 60, 'R₂', R2);
-    drawLamp(lampX, lampY, 'Đèn', glow);
+    drawResistor(r1X, rY, rLen, 'R₁', R1);
+    drawResistor(r2X, rY, rLen, 'R₂', R2);
+    drawLamp(right, mid, 'Đèn', glow);
 
-    // Vôn kế song song với đèn (nét đứt màu xanh)
-    const vmX = lampX, vmY = bot-40;
-    ctx.save(); ctx.strokeStyle='#4488ff'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
-    ctx.beginPath(); ctx.moveTo(right-4, top); ctx.lineTo(right-4, vmY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(right-4, vmY); ctx.lineTo(vmX+14, vmY); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(right-4, bot-4); ctx.lineTo(right-4, vmY); ctx.stroke();
-    ctx.setLineDash([]); ctx.restore();
-    drawVoltmeter(vmX-15, vmY, (I*RL).toFixed(1));
+    // Vôn kế song song với đèn
+    const vmX = right - (right-left) * 0.12;
+    const vmY = mid;
+    const vVal = (I * RL).toFixed(1);
+    ctx.save();
+    ctx.strokeStyle = '#4488ff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 5]);
+    // dây đo tới 2 đầu bóng đèn
+    ctx.beginPath(); ctx.moveTo(vmX + 14, vmY - 10); ctx.lineTo(right, mid - lampR); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vmX + 14, vmY + 10); ctx.lineTo(right, mid + lampR); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    drawVoltmeter(vmX, vmY, vVal);
 
   } else if(type === 'parallel') {
-    // Layout song song: pin → K → Ammeter → (R1 // R2) → Lamp → về
-    const left=60, right=640, top=70, mid=170, bot=260;
-    const batX=left+30, batY=(top+bot)/2;
-    const swX=130, swY=top;
-    const amX=210, amY=top;
-    const jL=290, jR=440; // junction points
-
-    // Dây ngoài
-    wire(left, batY-18, left, top, wireColor, lineW, shadowC);
-    wire(left, batY+18, left, bot, wireColor, lineW, shadowC);
-    wire(left, top, swX-14, top, wireColor, lineW, shadowC);
-    wire(swX+14, top, amX-14, top, wireColor, lineW, shadowC);
-    wire(amX+14, top, jL, top, wireColor, lineW, shadowC);
-    wire(jR, top, right-30, top, wireColor, lineW, shadowC);
+    // pin → K → A → (R1 // R2) → đèn → về
+    // khung ngoài cơ bản
+    wire(left, top, left, bot, wireColor, lineW, shadowC);
     wire(left, bot, right, bot, wireColor, lineW, shadowC);
-    wire(right, bot, right, top, wireColor, lineW, shadowC);
-    wire(right, top, right-30, top, wireColor, lineW, shadowC);
 
-    // Nhánh R1 (trên)
-    wire(jL, top, jL, mid-30, wireColor, lineW, shadowC);
-    wire(jL, mid-30, jL+10, mid-30, wireColor, lineW, shadowC);
-    wire(jR, mid-30, jR, top, wireColor, lineW, shadowC);
-    wire(jR-10, mid-30, jR, mid-30, wireColor, lineW, shadowC);
-    drawResistor(jL+10, mid-30, jR-jL-20, 'R₁', R1);
+    const batX = left, batY = mid;
+    const swX = left + (right-left) * 0.18, swY = top;
+    const amX = left + (right-left) * 0.32, amY = top;
+    const jL = left + (right-left) * 0.44;
+    const jR = left + (right-left) * 0.64;
+    const branchTop = top + (bot-top) * 0.18;
+    const branchBot = top + (bot-top) * 0.42;
 
-    // Nhánh R2 (dưới)
-    wire(jL, top, jL, mid+30, wireColor, lineW, shadowC);
-    wire(jL, mid+30, jL+10, mid+30, wireColor, lineW, shadowC);
-    wire(jR, mid+30, jR, top, wireColor, lineW, shadowC);
-    wire(jR-10, mid+30, jR, mid+30, wireColor, lineW, shadowC);
-    drawResistor(jL+10, mid+30, jR-jL-20, 'R₂', R2);
+    // dây trên đến nút jL và từ jR về phải
+    wire(left, top, swX - 14, top, wireColor, lineW, shadowC);
+    wire(swX + 14, top, amX - 14, top, wireColor, lineW, shadowC);
+    wire(amX + 14, top, jL, top, wireColor, lineW, shadowC);
+    wire(jR, top, right, top, wireColor, lineW, shadowC);
 
-    // Đèn nối tiếp sau song song
-    const lampX = right-60, lampY=(top+bot)/2;
-    wire(right, top, right, lampY-15, wireColor, lineW, shadowC);
-    wire(right, lampY+15, right, bot, wireColor, lineW, shadowC);
-    drawLamp(lampX+20, lampY, 'Đèn', glow);
+    // nhánh song song
+    wire(jL, top, jL, branchTop, wireColor, lineW, shadowC);
+    wire(jL, branchTop, jL + 10, branchTop, wireColor, lineW, shadowC);
+    wire(jR - 10, branchTop, jR, branchTop, wireColor, lineW, shadowC);
+    wire(jR, branchTop, jR, top, wireColor, lineW, shadowC);
+    drawResistor(jL + 10, branchTop, jR - jL - 20, 'R₁', R1);
 
-    drawBattery(batX-30, batY, E);
+    wire(jL, top, jL, branchBot, wireColor, lineW, shadowC);
+    wire(jL, branchBot, jL + 10, branchBot, wireColor, lineW, shadowC);
+    wire(jR - 10, branchBot, jR, branchBot, wireColor, lineW, shadowC);
+    wire(jR, branchBot, jR, top, wireColor, lineW, shadowC);
+    drawResistor(jL + 10, branchBot, jR - jL - 20, 'R₂', R2);
+
+    // đặt đèn trên dây phải
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = '#000'; ctx.lineWidth = lineW + 4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(right, mid - lampR - 4); ctx.lineTo(right, mid + lampR + 4); ctx.stroke();
+    ctx.restore();
+    wire(right, top, right, mid - lampR, wireColor, lineW, shadowC);
+    wire(right, mid + lampR, right, bot, wireColor, lineW, shadowC);
+    drawLamp(right, mid, 'Đèn', glow);
+
+    // vôn kế song song đèn
+    const vmX = right - (right-left) * 0.12;
+    const vmY = mid;
+    const vVal = (I * RL).toFixed(1);
+    ctx.save();
+    ctx.strokeStyle = '#4488ff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(vmX + 14, vmY - 10); ctx.lineTo(right, mid - lampR); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vmX + 14, vmY + 10); ctx.lineTo(right, mid + lampR); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    drawVoltmeter(vmX, vmY, vVal);
+
+    drawBattery(batX, batY, E);
     drawSwitch(swX, swY, closed);
     drawAmmeter(amX, amY, I.toFixed(2));
 
@@ -270,46 +341,74 @@ function drawCircuit(closed, I, E) {
     });
 
   } else { // mixed
-    const left=60, right=640, top=80, bot=240;
-    const batX=left+20, batY=(top+bot)/2;
-    const swX=120, swY=top;
-    const amX=200, amY=top;
-    const jL=290, jR=430;
-
-    wire(left, batY-18, left, top, wireColor, lineW, shadowC);
-    wire(left, batY+18, left, bot, wireColor, lineW, shadowC);
-    wire(left, top, swX-14, top, wireColor, lineW, shadowC);
-    wire(swX+14, top, amX-14, top, wireColor, lineW, shadowC);
-    wire(amX+14, top, jL, top, wireColor, lineW, shadowC);
-    wire(jR, top, right, top, wireColor, lineW, shadowC);
+    // pin → K → A → (R1 // (R2 + đèn)) → về
+    // khung ngoài cơ bản
+    wire(left, top, left, bot, wireColor, lineW, shadowC);
     wire(left, bot, right, bot, wireColor, lineW, shadowC);
     wire(right, bot, right, top, wireColor, lineW, shadowC);
 
-    // R1 nhánh trên song song
-    wire(jL, top, jL, top-50, wireColor, lineW, shadowC);
-    wire(jL, top-50, jL+15, top-50, wireColor, lineW, shadowC);
-    wire(jR, top, jR, top-50, wireColor, lineW, shadowC);
-    wire(jR-15, top-50, jR, top-50, wireColor, lineW, shadowC);
-    drawResistor(jL+15, top-50, jR-jL-30, 'R₁', R1);
+    const batX = left, batY = mid;
+    const swX = left + (right-left) * 0.18, swY = top;
+    const amX = left + (right-left) * 0.32, amY = top;
+    const jL = left + (right-left) * 0.46;
+    const jR = left + (right-left) * 0.70;
+    const branchTop = top - (bot-top) * 0.20;
+    const branchMid = top + (bot-top) * 0.18;
 
-    // R2 nhánh dưới song song
-    wire(jL, top, jL, top+50, wireColor, lineW, shadowC);
-    wire(jL, top+50, jL+15, top+50, wireColor, lineW, shadowC);
-    wire(jR, top, jR, top+50, wireColor, lineW, shadowC);
-    wire(jR-15, top+50, jR, top+50, wireColor, lineW, shadowC);
-    drawResistor(jL+15, top+50, jR-jL-30, 'R₂', R2);
+    // dây trên: trái → K → A → jL, và jR → phải
+    wire(left, top, swX - 14, top, wireColor, lineW, shadowC);
+    wire(swX + 14, top, amX - 14, top, wireColor, lineW, shadowC);
+    wire(amX + 14, top, jL, top, wireColor, lineW, shadowC);
+    wire(jR, top, right, top, wireColor, lineW, shadowC);
 
-    // Đèn sau khối song song
-    const lampX=right-50, lampY=(top+bot)/2;
-    wire(right, top, right, lampY-15, wireColor, lineW, shadowC);
-    wire(right, lampY+15, right, bot, wireColor, lineW, shadowC);
-    drawLamp(lampX, lampY, 'Đèn', glow);
+    // Nhánh trên: R1
+    wire(jL, top, jL, branchTop, wireColor, lineW, shadowC);
+    wire(jL, branchTop, jL + 12, branchTop, wireColor, lineW, shadowC);
+    wire(jR - 12, branchTop, jR, branchTop, wireColor, lineW, shadowC);
+    wire(jR, branchTop, jR, top, wireColor, lineW, shadowC);
+    drawResistor(jL + 12, branchTop, jR - jL - 24, 'R₁', R1);
+
+    // Nhánh dưới: R2 nối tiếp Đèn (đặt đèn ngay trước jR để dễ nhìn)
+    wire(jL, top, jL, branchMid, wireColor, lineW, shadowC);
+    wire(jR, branchMid, jR, top, wireColor, lineW, shadowC);
+
+    const r2StartX = jL + 12;
+    const r2Len = Math.max(40, (jR - jL) * 0.40);
+    const lampX = jR - Math.max(26, (jR - jL) * 0.12);
+
+    // dây và phần tử trên nhánh dưới (tách đoạn cho rõ ràng)
+    wire(jL, branchMid, r2StartX, branchMid, wireColor, lineW, shadowC);
+    drawResistor(r2StartX, branchMid, r2Len, 'R₂', R2);
+    wire(r2StartX + r2Len, branchMid, lampX - lampR, branchMid, wireColor, lineW, shadowC);
+    wire(lampX + lampR, branchMid, jR, branchMid, wireColor, lineW, shadowC);
+
+    // xóa đoạn dây tại vị trí đèn để không chồng lên hình
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = '#000'; ctx.lineWidth = lineW + 4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(lampX - lampR - 6, branchMid); ctx.lineTo(lampX + lampR + 6, branchMid); ctx.stroke();
+    ctx.restore();
+    drawLamp(lampX, branchMid, 'Đèn', glow);
+
+    // vôn kế song song đèn
+    const vmX = lampX;
+    const vmY = branchMid + (bot-top) * 0.22;
+    const vVal = (I * RL).toFixed(1);
+    ctx.save();
+    ctx.strokeStyle = '#4488ff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(vmX, vmY - 14); ctx.lineTo(lampX - lampR, branchMid); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vmX, vmY + 14); ctx.lineTo(lampX + lampR, branchMid); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    drawVoltmeter(vmX, vmY, vVal);
 
     [jL,jR].forEach(jx => {
       ctx.fillStyle = wireColor; ctx.beginPath(); ctx.arc(jx, top, 5, 0, Math.PI*2); ctx.fill();
     });
 
-    drawBattery(left, batY, E);
+    drawBattery(batX, batY, E);
     drawSwitch(swX, swY, closed);
     drawAmmeter(amX, amY, I.toFixed(2));
   }
@@ -317,10 +416,10 @@ function drawCircuit(closed, I, E) {
   // Nhãn trạng thái dưới cùng
   ctx.font = 'bold 12px Space Mono,monospace'; ctx.textAlign = 'center';
   if(closed) {
-    ctx.fillStyle = '#69f0ae';
+    ctx.fillStyle = '#1b5e20';
     ctx.fillText(`✔ Mạch đóng  |  I = ${I.toFixed(2)} A  |  P = ${(E*I).toFixed(2)} W`, W/2, H-10);
   } else {
-    ctx.fillStyle = '#ef5350';
+    ctx.fillStyle = '#c62828';
     ctx.fillText('✘ Mạch hở – Đóng khóa K để bật mạch', W/2, H-10);
   }
 }

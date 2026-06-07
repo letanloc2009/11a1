@@ -6,7 +6,7 @@ const chemicals = [
   { id:'HNO3', name:'HNO₃',  type:'acid',    strength:'strong', pH:1.2,  pKa: -1,   pKb: null, color:'#ffb74dcc', typeLabel:'Acid mạnh',  formula:'HNO₃ → H⁺ + NO₃⁻' },
   { id:'NaOH', name:'NaOH',  type:'base',    strength:'strong', pH:13.0, pKa: null, pKb: 0,   color:'#4fc3f7cc', typeLabel:'Base mạnh',  formula:'NaOH → Na⁺ + OH⁻' },
   { id:'KOH',  name:'KOH',   type:'base',    strength:'strong', pH:13.0, pKa: null, pKb: 0,   color:'#29b6f6cc', typeLabel:'Base mạnh',  formula:'KOH → K⁺ + OH⁻' },
-  { id:'CuOH2',name:'Cu(OH)₂',type:'base',  strength:'weak',   pH:9.0,  pKa: null, pKb: 6.5, color:'#80deea cc', typeLabel:'Base yếu',   formula:'Cu(OH)₂ ⇌ Cu²⁺ + 2OH⁻' },
+  { id:'CuOH2',name:'Cu(OH)₂',type:'base',  strength:'weak',   pH:9.0,  pKa: null, pKb: 6.5, color:'#80deeacc', typeLabel:'Base yếu',   formula:'Cu(OH)₂ ⇌ Cu²⁺ + 2OH⁻' },
   { id:'NH3',  name:'NH₃',   type:'base',    strength:'weak',   pH:11.0, pKa: null, pKb: 4.75,color:'#80cbc4cc', typeLabel:'Base yếu',   formula:'NH₃ + H₂O ⇌ NH₄⁺ + OH⁻' },
   { id:'H2O',  name:'H₂O',   type:'neutral', strength:'neutral',pH:7.0,  pKa: null, pKb: null,color:'#b2ebf2cc', typeLabel:'Trung tính', formula:'H₂O – nước tinh khiết' },
   { id:'NaCl', name:'NaCl',  type:'neutral', strength:'neutral',pH:7.0,  pKa: null, pKb: null,color:'#e0e0e0cc', typeLabel:'Muối',       formula:'NaCl – muối ăn' },
@@ -17,6 +17,7 @@ const chemicals = [
 ];
 
 let selectedA = null, selectedB = null;
+let lastMixedPH = null;
 
 function initShelf() {
   const row = document.getElementById('shelf-row'); if (!row) return;
@@ -30,6 +31,11 @@ function initShelf() {
     div.onclick = () => selectChemical(ch);
     row.appendChild(div);
   });
+  // cập nhật quỳ tím theo nồng độ thay đổi
+  const concAEl = document.getElementById('conc-A');
+  const concBEl = document.getElementById('conc-B');
+  if (concAEl) concAEl.addEventListener('input', updateLitmus);
+  if (concBEl) concBEl.addEventListener('input', updateLitmus);
   resetChem();
 }
 
@@ -73,13 +79,36 @@ function clearSlot(slot) {
 }
 
 function updateLitmus() {
-  const paper = document.getElementById('litmus-paper');
-  const result = document.getElementById('litmus-result');
-  if (!selectedA) { paper.style.background = '#9c27b0'; document.getElementById('litmus-text').textContent = 'Quỳ tím'; result.textContent = 'Chưa thử'; return; }
-  const pH = selectedA.pH;
-  if (pH < 7) { paper.style.background = '#e74c3c'; document.getElementById('litmus-text').textContent = 'Đỏ'; result.textContent = `pH = ${pH} → Môi trường acid 🔴`; }
-  else if (pH > 7) { paper.style.background = '#1565c0'; document.getElementById('litmus-text').textContent = 'Xanh'; result.textContent = `pH = ${pH} → Môi trường base 🔵`; }
-  else { paper.style.background = '#9c27b0'; document.getElementById('litmus-text').textContent = 'Tím'; result.textContent = `pH = ${pH} → Trung tính ⚪`; }
+  function setLitmus(paperId, resultId, pH, emptyText) {
+    const paper = document.getElementById(paperId);
+    const result = document.getElementById(resultId);
+    if (!paper || !result) return;
+    if (pH === null || Number.isNaN(pH)) {
+      paper.style.background = '#9c27b0';
+      result.textContent = emptyText || '—';
+      return;
+    }
+    const val = Math.min(14, Math.max(0, pH));
+    if (val < 7) {
+      paper.style.background = '#e74c3c';
+      result.textContent = `pH = ${val.toFixed(2)} → Acid (quỳ đỏ)`;
+    } else if (val > 7) {
+      paper.style.background = '#1565c0';
+      result.textContent = `pH = ${val.toFixed(2)} → Base (quỳ xanh)`;
+    } else {
+      paper.style.background = '#9c27b0';
+      result.textContent = `pH = 7.00 → Trung tính`;
+    }
+  }
+
+  const concA = parseFloat(document.getElementById('conc-A')?.value) || 0.1;
+  const concB = parseFloat(document.getElementById('conc-B')?.value) || 0.1;
+  const pHA = selectedA ? computePH(selectedA, concA) : null;
+  const pHB = selectedB ? computePH(selectedB, concB) : null;
+
+  setLitmus('litmus-A-paper', 'litmus-A-result', selectedA ? pHA : null, 'Chưa chọn');
+  setLitmus('litmus-B-paper', 'litmus-B-result', selectedB ? pHB : null, 'Chưa chọn');
+  setLitmus('litmus-paper', 'litmus-result', lastMixedPH, 'Chưa phản ứng');
 }
 
 function computePH(chemical, concentration) {
@@ -185,6 +214,7 @@ function mixChemicals() {
   }
 
   finalpH = Math.min(14, Math.max(0, finalpH));
+  lastMixedPH = finalpH;
   
   document.getElementById('ph-val').textContent = finalpH.toFixed(2);
   document.getElementById('chem-ph-val').innerHTML = finalpH.toFixed(2);
@@ -201,11 +231,8 @@ function mixChemicals() {
   document.getElementById('liq-result').style.background = color;
   document.getElementById('ph-display').style.display = 'flex';
   
-  const paper = document.getElementById('litmus-paper');
-  const resultSpan = document.getElementById('litmus-result');
-  if (finalpH < 7) { paper.style.background = '#e74c3c'; document.getElementById('litmus-text').textContent = 'Đỏ'; resultSpan.textContent = `pH = ${finalpH.toFixed(2)} → Môi trường acid 🔴`; }
-  else if (finalpH > 7) { paper.style.background = '#1565c0'; document.getElementById('litmus-text').textContent = 'Xanh'; resultSpan.textContent = `pH = ${finalpH.toFixed(2)} → Môi trường base 🔵`; }
-  else { paper.style.background = '#9c27b0'; document.getElementById('litmus-text').textContent = 'Tím'; resultSpan.textContent = `pH = 7.00 → Trung tính ⚪`; }
+  // cập nhật phần quỳ tím (Chất A/B + Hỗn hợp)
+  updateLitmus();
   
   const eqDiv = document.getElementById('reaction-equation');
   const eqText = document.getElementById('reaction-text');
@@ -252,6 +279,7 @@ function resetChem() {
   document.getElementById('conc-A').value = '0.1';
   document.getElementById('conc-B').value = '0.1';
   document.getElementById('vol-A').value = '1.0';
+  lastMixedPH = null;
   updateLitmus();
 }
 

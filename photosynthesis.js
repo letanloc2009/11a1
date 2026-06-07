@@ -11,11 +11,36 @@ let psBubbles = [];
 let psO2Count = 0;
 let psLastTs = 0;
 
+let psResizeBound = false;
+function ensurePSCanvasSize() {
+  if (!psCanvas || !psCanvas.parentElement) return;
+  const wrap = psCanvas.parentElement;
+  const cssW = Math.max(280, wrap.clientWidth || 700);
+  const cssH = Math.max(220, Math.round(cssW * (280 / 700)));
+  psCanvas.style.height = cssH + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  const newW = Math.round(cssW * dpr);
+  const newH = Math.round(cssH * dpr);
+  if (psCanvas.width !== newW || psCanvas.height !== newH) {
+    psCanvas.width = newW;
+    psCanvas.height = newH;
+    psBubbles = [];
+  }
+}
+
 function initPhotosynthesis() {
   if (psCanvas) return;
   psCanvas = document.getElementById('ps-canvas');
   if (!psCanvas) return;
   psCtx = psCanvas.getContext('2d');
+  ensurePSCanvasSize();
+  if (!psResizeBound) {
+    psResizeBound = true;
+    window.addEventListener('resize', () => {
+      ensurePSCanvasSize();
+      psDraw();
+    }, { passive: true });
+  }
   updatePSParams();
   resetPhotosynthesis();
 }
@@ -85,6 +110,7 @@ function psLoop(ts) {
   const dt = Math.min(0.04, Math.max(0.001, (ts - psLastTs) / 1000));
   psLastTs = ts;
 
+  ensurePSCanvasSize();
   updatePSParams();
   const { ratePerMin } = psComputeRate();
 
@@ -131,6 +157,7 @@ function psComputeRate() {
 
 function psSpawnBubble() {
   if (!psCanvas) return;
+  ensurePSCanvasSize();
   const W = psCanvas.width, H = psCanvas.height;
 
   // vùng "lá" ở phía dưới
@@ -160,6 +187,7 @@ function psUpdateUI() {
 
 function psDraw() {
   if (!psCtx) return;
+  ensurePSCanvasSize();
   const W = psCanvas.width, H = psCanvas.height;
   psCtx.clearRect(0, 0, W, H);
 
@@ -192,6 +220,8 @@ function psDraw() {
     psCtx.globalAlpha = Math.max(0.15, Math.min(0.85, b.life / 6));
     psCtx.strokeStyle = 'rgba(255,255,255,0.85)';
     psCtx.lineWidth = 2;
+    psCtx.shadowBlur = 8;
+    psCtx.shadowColor = 'rgba(124,185,255,0.55)';
     psCtx.beginPath();
     psCtx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
     psCtx.stroke();

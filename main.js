@@ -30,7 +30,9 @@ function showPage(id) {
     dna: 'Lắp ráp DNA', cell: 'Tế bào', photosynthesis: 'Quang hợp',
     enzyme: 'Enzyme', mitosis: 'Nguyên phân',
     young: 'Giao thoa Young', energy: 'Động năng – Thế năng', torque: 'Moment lực',
-    projectile: 'Chuyển động ném', mendel: 'Lai giống Mendel', watercycle: 'Vòng tuần hoàn nước'
+    projectile: 'Chuyển động ném', mendel: 'Lai giống Mendel',
+    watercycle: 'Vòng tuần hoàn nước', earthorbit: 'Trái Đất quanh Mặt Trời',
+    tectonic: 'Mảng kiến tạo', atmosphere: 'Khí áp & Gió'
   };
   
   const statusPage = document.getElementById('status-page');
@@ -58,6 +60,8 @@ function showPage(id) {
   if (id === 'projectile') { if (typeof initProjectile === 'function') initProjectile(); }
   if (id === 'mendel') { if (typeof initMendel === 'function') initMendel(); }
   if (id === 'watercycle') { if (typeof initWaterCycle === 'function') initWaterCycle(); }
+  if (id === 'earthorbit') { if (typeof initEarthOrbit === 'function') initEarthOrbit(); }
+  if (id === 'tectonic') { if (typeof initTectonic === 'function') initTectonic(); }
   if (id === 'periodic') {
 	if (!window.periodicRendered) {
 		renderPeriodicTable();

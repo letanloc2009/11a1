@@ -21,7 +21,7 @@
   <div class="header-center">ONLINE EXPERIMENT</div>
   <div class="header-actions">
     <button class="btn-mail" id="openModal" title="Gửi phản hồi">✉</button>
-    <button class="btn-mail btn-info" id="openAuthorModal" title="Thông tin tác giả" style="background:linear-gradient(135deg,#1a6891,#0d4a6b);font-size:15px;font-weight:800;font-family:Georgia,serif;font-style:italic;">i</button>
+    <button class="btn-mail btn-info" id="openAuthorModal" title="Thông tin tác giả" style="font-size:15px;font-weight:800;font-family:Georgia,serif;font-style:italic;">i</button>
   </div>
 </header>
 
@@ -63,6 +63,8 @@
         <div class="nav-item" onclick="showPage('periodic')">📊 Bảng tuần hoàn</div>
         <div class="nav-item" onclick="showPage('reactionrate')">⚡ Tốc độ phản ứng</div>
         <div class="nav-item" onclick="showPage('electrolysis')">🔌 Điện phân</div>
+        <div class="nav-item" onclick="showPage('redox')">⚛ Oxi hóa – Khử</div>
+        <div class="nav-item" onclick="showPage('crystal')">💎 Kết tinh</div>
       </div>
     </div>
 
@@ -90,6 +92,8 @@
       </div>
       <div class="subject-items">
         <div class="nav-item" onclick="showPage('watercycle')">💧 Vòng tuần hoàn nước</div>
+        <div class="nav-item" onclick="showPage('earthorbit')">🌞 Trái Đất quanh Mặt Trời</div>
+        <div class="nav-item" onclick="showPage('atmosphere')">🌬 Khí áp & Gió</div>
       </div>
     </div>
   </aside>
@@ -156,6 +160,16 @@
           <h3>Điện phân</h3>
           <p>Tính khối lượng bám catot theo định luật Faraday</p>
         </div>
+        <div class="card chem-card" onclick="showPage('redox')">
+          <div class="card-icon">⚛</div>
+          <h3>Oxi hóa – Khử</h3>
+          <p>Electron chuyển dời, chất khử, chất oxi hóa</p>
+        </div>
+        <div class="card chem-card" onclick="showPage('crystal')">
+          <div class="card-icon">💎</div>
+          <h3>Kết tinh</h3>
+          <p>Độ tan, dung dịch bão hòa và quá trình kết tinh</p>
+        </div>
       </div>
 
       <h2 class="section-title">🌿 Sinh Học</h2>
@@ -199,6 +213,16 @@
           <div class="card-icon">💧</div>
           <h3>Vòng tuần hoàn nước</h3>
           <p>Bản đồ tương tác – bốc hơi, ngưng tụ, mưa, dòng chảy</p>
+        </div>
+        <div class="card geo-card" onclick="showPage('earthorbit')">
+          <div class="card-icon">🌞</div>
+          <h3>Trái Đất quanh Mặt Trời</h3>
+          <p>Ngày/Đêm và Bốn mùa – chọn ngày trong năm</p>
+        </div>
+        <div class="card geo-card" onclick="showPage('atmosphere')">
+          <div class="card-icon">🌬</div>
+          <h3>Khí Áp & Gió</h3>
+          <p>Hoàn lưu khí quyển, đới gió, hiệu ứng Coriolis</p>
         </div>
       </div>
     </div>
@@ -748,12 +772,9 @@
       <div class="sim-canvas" style="padding:0; min-height:260px;">
         <canvas id="pe-canvas" width="700" height="240" style="display:block;max-width:100%;background:#87CEEB"></canvas>
       </div>
-      <div class="sim-controls" style="grid-template-columns:repeat(3,1fr)">
-        <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="pe-mass" value="55" step="5" min="10" max="200" oninput="resetPE()"></div>
-        <div class="control-group"><label>Chiều cao h (m)</label><input type="number" id="pe-height" value="5" step="0.5" min="0.5" max="20" oninput="resetPE()"></div>
-        <div class="control-group" style="align-self:end">
-          <button class="btn btn-physics" onclick="calcPE()" style="width:100%;padding:10px">= Tính Thế năng</button>
-        </div>
+      <div class="sim-controls" style="grid-template-columns:repeat(2,1fr)">
+        <div class="control-group"><label>Khối lượng m (kg)</label><input type="number" id="pe-mass" value="55" step="5" min="10" max="200" oninput="resetPE(); calcPE()"></div>
+        <div class="control-group"><label>Chiều cao h (m)</label><input type="number" id="pe-height" value="5" step="0.5" min="0.5" max="20" oninput="resetPE(); calcPE()"></div>
       </div>
     </div>
     <div class="data-panel">
@@ -832,7 +853,7 @@
           <button class="btn btn-physics" id="circuit-main-btn" onclick="toggleCircuit()">⚡ ĐÓNG MẠCH</button>
           <button class="btn btn-secondary" onclick="resetCircuit()">↺ LÀM MỚI</button>
         </div>
-        <div class="sim-canvas" style="padding:0;background:#0d1117;min-height:320px">
+        <div class="sim-canvas" style="padding:0;background:linear-gradient(180deg,#ffffff 0%, #f3f7ff 100%);min-height:320px">
           <canvas id="circuit-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%"></canvas>
         </div>
         <div class="sim-controls">
@@ -940,14 +961,25 @@
           </div>
         </div>
 
-        <!-- Giấy quỳ tím -->
+        <!-- Chất chỉ thị màu (quỳ tím) -->
         <div class="litmus-section">
-          <div class="litmus-label">🌸 Thử với giấy quỳ tím:</div>
-          <div class="litmus-display" id="litmus-display">
-            <div class="litmus-paper" id="litmus-paper">
-              <span id="litmus-text">Quỳ tím</span>
+          <div class="litmus-label">🌸 Chỉ thị màu (quỳ tím) &amp; pH:</div>
+          <div class="litmus-grid" id="litmus-display">
+            <div class="litmus-card">
+              <div class="litmus-card-title">Chất A</div>
+              <div class="litmus-paper" id="litmus-A-paper">Quỳ tím</div>
+              <div class="litmus-result" id="litmus-A-result">Chưa chọn</div>
             </div>
-            <div class="litmus-result" id="litmus-result">Chưa thử</div>
+            <div class="litmus-card">
+              <div class="litmus-card-title">Chất B</div>
+              <div class="litmus-paper" id="litmus-B-paper">Quỳ tím</div>
+              <div class="litmus-result" id="litmus-B-result">Chưa chọn</div>
+            </div>
+            <div class="litmus-card">
+              <div class="litmus-card-title">Hỗn hợp</div>
+              <div class="litmus-paper" id="litmus-paper">Quỳ tím</div>
+              <div class="litmus-result" id="litmus-result">Chưa phản ứng</div>
+            </div>
           </div>
         </div>
 
@@ -1123,11 +1155,11 @@
     <div class="page" id="page-electrolysis">
       <div class="page-header chem-header">
         <span class="page-badge chem-badge">⚗ Hóa Học</span>
-        <h2>Điện phân dung dịch CuSO₄ (mô phỏng)</h2>
+        <h2>Điện phân dung dịch CuSO₄ </h2>
       </div>
       <div class="sim-container">
         <div class="sim-toolbar">
-          <span class="sim-title">// ĐỊNH LUẬT FARADAY: m = (M·I·t)/(n·F)</span>
+          <span class="sim-title">// ĐỊNH LUẬT FARADAY </span>
           <button class="btn btn-chem" id="el-btn" onclick="toggleElectrolysis()">▶ CHẠY</button>
           <button class="btn btn-secondary" onclick="resetElectrolysis()">↺ LÀM MỚI</button>
         </div>
@@ -1136,7 +1168,7 @@
         </div>
         <div class="sim-controls">
           <div class="control-group">
-            <label>Cường độ dòng I (A)</label>
+            <label>Cường độ dòng điện I (A)</label>
             <input type="number" id="el-current-input" min="0" max="5" value="1.5" step="0.1"
               oninput="document.getElementById('el-current').value=Math.round(parseFloat(this.value||'1.5')*10); updateELParams()">
             <input type="range" id="el-current" min="0" max="50" value="15"
@@ -1180,6 +1212,113 @@
             <li>F = 96485 C/mol e⁻, M(Cu) = 63.546 g/mol</li>
           </ul>
         </div>
+      </div>
+    </div>
+
+    <!-- ==================== HÓA HỌC: OXI HÓA – KHỬ ==================== -->
+    <div class="page" id="page-redox">
+      <div class="page-header chem-header">
+        <span class="page-badge chem-badge">⚗ Hóa Học</span>
+        <h2>Phản Ứng Oxi Hóa – Khử</h2>
+      </div>
+      <div class="sim-container">
+        <div class="sim-toolbar">
+          <span class="sim-title">// ELECTRON CHUYỂN DỜI – OXI HÓA – KHỬ</span>
+          <button class="btn btn-chem" id="redox-btn" onclick="runRedox()">⚗ PHẢN ỨNG</button>
+          <button class="btn btn-secondary" onclick="resetRedox()">↺ LÀM MỚI</button>
+        </div>
+        <div style="padding:10px 16px;background:#eef2fa;border-bottom:2px solid var(--border);">
+          <div style="font-size:11px;font-weight:800;color:#1565c0;letter-spacing:1px;margin-bottom:8px;">CHỌN PHẢN ỨNG OXI HÓA – KHỬ:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="redox-picker"></div>
+        </div>
+        <div class="sim-canvas" style="padding:0;min-height:280px;background:#0d1b2a">
+          <canvas id="redox-canvas" width="700" height="280" style="display:block;max-width:100%;width:100%"></canvas>
+        </div>
+      </div>
+      <div class="data-panel">
+        <div class="data-cell"><div class="dc-label">Chất khử</div><div class="dc-val" id="redox-reductant" style="font-size:13px">–</div></div>
+        <div class="data-cell"><div class="dc-label">Chất oxi hóa</div><div class="dc-val" id="redox-oxidant" style="font-size:13px">–</div></div>
+        <div class="data-cell"><div class="dc-label">e⁻ chuyển</div><div class="dc-val" id="redox-electrons">–</div></div>
+        <div class="data-cell"><div class="dc-label">ΔG°</div><div class="dc-val" id="redox-dg" style="font-size:12px">–</div></div>
+      </div>
+      <div id="redox-equation" style="display:none;padding:14px 18px;background:#eef6ff;border-top:2px solid var(--border);">
+        <h4 style="margin:0 0 6px;font-size:13px;color:#1565c0;">⚗ Phương trình ion rút gọn:</h4>
+        <div id="redox-eq-text" style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:#0d47a1;"></div>
+        <div id="redox-eq-note" style="font-size:12px;color:#666;margin-top:4px;"></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block"><h4>Khái niệm cơ bản</h4><ul>
+          <li>Oxi hóa: chất <b>nhường</b> electron (tăng số oxi hóa)</li>
+          <li>Khử: chất <b>nhận</b> electron (giảm số oxi hóa)</li>
+          <li>Chất khử bị oxi hóa; chất oxi hóa bị khử</li>
+          <li>Tổng e⁻ nhường = tổng e⁻ nhận (bảo toàn electron)</li>
+        </ul></div>
+        <div class="info-block"><h4>Ứng dụng thực tế</h4><ul>
+          <li>Pin điện hóa: phản ứng oxi hóa – khử tạo ra điện</li>
+          <li>Ăn mòn kim loại: Fe bị oxi hóa bởi O₂ và H₂O</li>
+          <li>Quang hợp: CO₂ bị khử → glucose</li>
+          <li>Hô hấp tế bào: glucose bị oxi hóa → CO₂ + H₂O + năng lượng</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <!-- ==================== HÓA HỌC: KẾT TINH ==================== -->
+    <div class="page" id="page-crystal">
+      <div class="page-header chem-header">
+        <span class="page-badge chem-badge">⚗ Hóa Học</span>
+        <h2>Kết Tinh – Độ Tan Dung Dịch</h2>
+      </div>
+      <div class="sim-container">
+        <div class="sim-toolbar">
+          <span class="sim-title">// MÔ PHỎNG QUÁ TRÌNH KẾT TINH</span>
+          <button class="btn btn-chem" id="crystal-btn" onclick="toggleCrystal()">▶ CHẠY</button>
+          <button class="btn btn-secondary" onclick="resetCrystal()">↺ LÀM MỚI</button>
+        </div>
+        <div class="sim-canvas" style="padding:0;min-height:300px;background:#0d1b2a">
+          <canvas id="crystal-canvas" width="700" height="300" style="display:block;max-width:100%;width:100%"></canvas>
+        </div>
+        <div class="sim-controls">
+          <div class="control-group">
+            <label>Chất tan</label>
+            <select id="crystal-substance" onchange="resetCrystal()">
+              <option value="NaCl">NaCl (muối ăn)</option>
+              <option value="KNO3">KNO₃ (kali nitrat)</option>
+              <option value="NaNO3">NaNO₃</option>
+              <option value="CuSO4">CuSO₄ (đồng sunfat)</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label>Nhiệt độ (°C)</label>
+            <input type="number" id="crystal-temp" value="60" step="5" min="0" max="100" oninput="updateCrystalTemp()">
+            <span class="val" id="crystal-temp-val">60°C</span>
+          </div>
+          <div class="control-group">
+            <label>Nồng độ (g/100g H₂O)</label>
+            <input type="number" id="crystal-conc" value="40" step="5" min="0" max="200" oninput="updateCrystalConc()">
+            <span class="val" id="crystal-conc-val">40 g</span>
+          </div>
+        </div>
+      </div>
+      <div class="data-panel">
+        <div class="dc-label-row" style="display:none"></div>
+        <div class="data-cell"><div class="dc-label">Độ tan ở T°</div><div class="dc-val" id="crystal-solubility">–<span class="dc-unit">g/100g</span></div></div>
+        <div class="data-cell"><div class="dc-label">Trạng thái</div><div class="dc-val" id="crystal-state" style="font-size:12px">–</div></div>
+        <div class="data-cell"><div class="dc-label">Lượng kết tinh</div><div class="dc-val" id="crystal-amount">–<span class="dc-unit">g</span></div></div>
+        <div class="data-cell"><div class="dc-label">Nhiệt độ</div><div class="dc-val" id="crystal-temp-display">60<span class="dc-unit">°C</span></div></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-block"><h4>Độ tan và nhiệt độ</h4><ul>
+          <li>Hầu hết chất rắn: độ tan tăng theo nhiệt độ</li>
+          <li>Khi làm nguội dung dịch bão hòa → kết tinh</li>
+          <li>Dung dịch quá bão hòa: lượng chất tan &gt; độ tan</li>
+          <li>Kết tinh: chất tan tách ra khỏi dung dịch dạng tinh thể</li>
+        </ul></div>
+        <div class="info-block"><h4>Ứng dụng</h4><ul>
+          <li>Tái chế muối từ nước biển (kết tinh bay hơi)</li>
+          <li>Tinh chế đường (kết tinh nhiều lần)</li>
+          <li>Sản xuất phân bón KNO₃, NH₄NO₃</li>
+          <li>Tổng hợp tinh thể đá quý nhân tạo</li>
+        </ul></div>
       </div>
     </div>
         
@@ -1354,7 +1493,7 @@
 <div class="page" id="page-photosynthesis">
   <div class="page-header bio-header">
     <span class="page-badge bio-badge">🌿 Sinh Học</span>
-    <h2>Quang hợp (mô phỏng)</h2>
+    <h2>Quang hợp </h2>
   </div>
   <div class="sim-container">
     <div class="sim-toolbar">
@@ -1491,7 +1630,6 @@
   <div class="sim-container">
     <div class="sim-toolbar">
       <span class="sim-title">// MÔ PHỎNG LAI GIỐNG – ĐỊNH LUẬT MENDEL</span>
-      <button class="btn btn-bio" onclick="runMendelCross()">🌸 LAI GIỐNG</button>
       <button class="btn btn-secondary" onclick="runMendelSimulation(10000)">🎲 Mô phỏng 10.000 cây</button>
     </div>
 
@@ -1570,6 +1708,87 @@
       <li>Cung cấp nước ngọt cho sinh vật</li>
       <li>Rừng tham gia thoát hơi nước (tái tạo mưa)</li>
       <li>Nước ngầm từ thấm lọc bổ sung nguồn nước sạch</li>
+    </ul></div>
+  </div>
+</div>
+
+<!-- ==================== ĐỊA LÍ: TRÁI ĐẤT QUAY QUANH MẶT TRỜI ==================== -->
+<div class="page" id="page-earthorbit">
+  <div class="page-header" style="background:#ffffff">
+    <span class="page-badge" style="background:#e8f4fd;color:#0984e3;border:1px solid #b3d4f0">🌍 Địa Lí</span>
+    <h2>Trái Đất Quay Quanh Mặt Trời</h2>
+  </div>
+  <div class="sim-container">
+    <div class="sim-toolbar" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a)">
+      <span class="sim-title" style="color:#74b9ff">// NGÀY/ĐÊM – TRỤC NGHIÊNG 23.5° – BỐN MÙA</span>
+      <button class="btn" style="background:#2a3a55;color:#aac4e6" id="earthorbit-auto-btn" onclick="toggleEarthOrbitAuto()">⏸ TỰ ĐỘNG</button>
+      <button class="btn" style="background:#0984e3;color:#fff" onclick="initEarthOrbit()">↺ Đặt lại</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;background:#e8f4fd;border-bottom:2px solid #b3d4f0;align-items:center;">
+      <span style="font-size:11px;font-weight:800;color:#0984e3;letter-spacing:1px;">NĂM:</span>
+      <input type="number" id="earth-year" min="1900" max="2100" step="1" style="width:110px" oninput="setEarthYear(parseInt(this.value,10))">
+      <span style="font-family:'Space Mono',monospace;font-weight:800;color:#0d2b4e;min-width:160px" id="earth-year-info">—</span>
+      <span style="font-size:11px;font-weight:800;color:#0984e3;letter-spacing:1px;margin-left:auto;">NGÀY:</span>
+      <input type="range" id="earth-day" min="1" max="365" value="80" style="flex:1;min-width:180px;" oninput="setEarthDay(parseInt(this.value,10))">
+      <span style="font-family:'Space Mono',monospace;font-weight:800;color:#0d2b4e;min-width:140px;text-align:right;" id="earth-day-label">Ngày 80</span>
+      <button class="water-phase-btn" onclick="jumpEarthEvent('spring')">Xuân phân</button>
+      <button class="water-phase-btn" onclick="jumpEarthEvent('summer')">Hạ chí</button>
+      <button class="water-phase-btn" onclick="jumpEarthEvent('autumn')">Thu phân</button>
+      <button class="water-phase-btn" onclick="jumpEarthEvent('winter')">Đông chí</button>
+    </div>
+    <div class="sim-canvas" style="padding:0;min-height:340px;background:#0b132b;">
+      <canvas id="earthorbit-canvas" width="700" height="340" style="display:block;max-width:100%;width:100%;"></canvas>
+    </div>
+    <div id="earthorbit-info" style="padding:16px;">
+      <p class="water-hint">Kéo thanh ngày trong năm để xem vị trí Trái Đất nhận ánh sáng và giải thích Bốn mùa.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ĐỊA LÍ: MẢNG KIẾN TẠO ==================== -->
+<!-- ==================== ĐỊA LÍ: KHÍ ÁP & GIÓ ==================== -->
+<div class="page" id="page-atmosphere">
+  <div class="page-header" style="background:#ffffff">
+    <span class="page-badge" style="background:#e8f4fd;color:#0984e3;border:1px solid #b3d4f0">🌍 Địa Lí</span>
+    <h2>Khí Áp & Gió – Hoàn Lưu Khí Quyển</h2>
+  </div>
+  <div class="sim-container">
+    <div class="sim-toolbar" style="background:linear-gradient(135deg,#0d2b4e,#1a4a7a)">
+      <span class="sim-title" style="color:#74b9ff">// HOÀN LƯU KHÍ QUYỂN – CÁC ĐỚI GIÓ</span>
+      <button class="btn" style="background:#0984e3;color:#fff" id="atm-btn" onclick="toggleAtmosphere()">▶ CHẠY</button>
+      <button class="btn" style="background:#2a3a55;color:#aac4e6" onclick="resetAtmosphere()">↺ Đặt lại</button>
+    </div>
+    <div class="sim-canvas" style="padding:0;min-height:320px;background:#0b132b">
+      <canvas id="atm-canvas" width="700" height="320" style="display:block;max-width:100%;width:100%"></canvas>
+    </div>
+    <div class="sim-controls">
+      <div class="control-group">
+        <label>Chế độ hiển thị</label>
+        <select id="atm-mode" onchange="resetAtmosphere()">
+          <option value="cells">Ô hoàn lưu Hadley / Ferrel / Polar</option>
+          <option value="coriolis">Hiệu ứng Coriolis</option>
+          <option value="pressure">Đai khí áp</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="data-panel">
+    <div class="data-cell"><div class="dc-label">Vĩ tuyến</div><div class="dc-val" id="atm-lat">0°</div></div>
+    <div class="data-cell"><div class="dc-label">Đới gió</div><div class="dc-val" id="atm-wind" style="font-size:12px">Tín phong</div></div>
+    <div class="data-cell"><div class="dc-label">Khí áp</div><div class="dc-val" id="atm-pressure">1013<span class="dc-unit">hPa</span></div></div>
+    <div class="data-cell"><div class="dc-label">Khí hậu</div><div class="dc-val" id="atm-climate" style="font-size:12px">Nhiệt đới</div></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-block"><h4>Các đới gió chính</h4><ul>
+      <li>Tín phong (0°–30°): gió ổn định từ áp cao chí tuyến về xích đạo</li>
+      <li>Gió Tây (30°–60°): thổi từ tây sang đông ở vĩ độ trung bình</li>
+      <li>Gió Đông cực (60°–90°): thổi từ cực về vĩ độ thấp hơn</li>
+    </ul></div>
+    <div class="info-block"><h4>Hiệu ứng Coriolis</h4><ul>
+      <li>Bán cầu Bắc: gió lệch sang phải so với chiều ban đầu</li>
+      <li>Bán cầu Nam: gió lệch sang trái</li>
+      <li>Do Trái Đất quay từ Tây sang Đông</li>
+      <li>Tạo ra các xoáy thuận (cyclone) và nghịch (anticyclone)</li>
     </ul></div>
   </div>
 </div>
@@ -1795,6 +2014,8 @@
 <script src="chemistry.js"></script>
 <script src="reactionrate.js"></script>
 <script src="electrolysis.js"></script>
+<script src="redox.js"></script>
+<script src="crystal.js"></script>
 <script src="young.js"></script>
 <script src="energy.js"></script>
 <script src="torque.js"></script>
@@ -1806,5 +2027,7 @@
 <script src="projectile.js"></script>
 <script src="mendel.js"></script>
 <script src="watercycle.js"></script>
+<script src="earthorbit.js"></script>
+<script src="atmosphere.js"></script>
 </body>
 </html>

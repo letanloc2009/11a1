@@ -14,11 +14,37 @@ let rrReactionCount = 0;
 let rrLastFrameTs = 0;
 let rrRateWindow = []; // [{t, count}]
 
+let rrResizeBound = false;
+function ensureRRCanvasSize() {
+  if (!rrCanvas || !rrCanvas.parentElement) return;
+  const wrap = rrCanvas.parentElement;
+  const cssW = Math.max(280, wrap.clientWidth || 700);
+  const cssH = Math.max(220, Math.round(cssW * (300 / 700)));
+  rrCanvas.style.height = cssH + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  const newW = Math.round(cssW * dpr);
+  const newH = Math.round(cssH * dpr);
+  if (rrCanvas.width !== newW || rrCanvas.height !== newH) {
+    rrCanvas.width = newW;
+    rrCanvas.height = newH;
+    // khi resize thì tái tạo hạt để không bị dồn góc
+    rrParticles = createRRParticles(Math.max(12, rrParticles.length || 24));
+  }
+}
+
 function initReactionRate() {
   if (rrCanvas) return;
   rrCanvas = document.getElementById('rr-canvas');
   if (!rrCanvas) return;
   rrCtx = rrCanvas.getContext('2d');
+  ensureRRCanvasSize();
+  if (!rrResizeBound) {
+    rrResizeBound = true;
+    window.addEventListener('resize', () => {
+      ensureRRCanvasSize();
+      rrDraw(true);
+    }, { passive: true });
+  }
   updateRRParams();
   resetReactionRate();
 }
@@ -107,6 +133,7 @@ function rrLoop(ts) {
 
 function rrStep(dt) {
   if (!rrCtx) return;
+  ensureRRCanvasSize();
   updateRRParams();
 
   const W = rrCanvas.width;
@@ -194,6 +221,7 @@ function rrUpdateUI(rate) {
 
 function rrDraw(force) {
   if (!rrCtx) return;
+  ensureRRCanvasSize();
   const W = rrCanvas.width, H = rrCanvas.height;
   rrCtx.clearRect(0, 0, W, H);
 
@@ -208,10 +236,14 @@ function rrDraw(force) {
 
   // particles
   for (const p of rrParticles) {
+    rrCtx.save();
+    rrCtx.shadowBlur = 10;
+    rrCtx.shadowColor = p.color;
     rrCtx.fillStyle = p.color;
     rrCtx.beginPath();
     rrCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     rrCtx.fill();
+    rrCtx.restore();
   }
 
   // flashes

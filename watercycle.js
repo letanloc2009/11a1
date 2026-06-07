@@ -1,6 +1,9 @@
 /* ==================== VÒNG TUẦN HOÀN NƯỚC ==================== */
 let waterPhase = null; // current highlighted phase
-let waterAnimRAF = null, waterAnimRunning = false, waterAnimT = 0;
+let waterAnimRAF = null, waterAnimRunning = false;
+let waterAnimT = 0;
+let waterLastTime = null;
+let waterDt = 0;
 let waterParticles = [];
 
 const waterPhaseData = {
@@ -38,6 +41,7 @@ function initWaterCycle() {
   waterPhase = null;
   waterParticles = [];
   waterAnimRunning = false;
+  waterLastTime = null;
   cancelAnimationFrame(waterAnimRAF);
   drawWaterCycleScene(null);
   renderWaterPhaseInfo(null);
@@ -79,6 +83,7 @@ function animateWaterPhase(phase) {
   waterParticles = [];
   cancelAnimationFrame(waterAnimRAF);
   waterAnimT = 0;
+  waterLastTime = null;
   const n = 18;
   for (let i = 0; i < n; i++) {
     waterParticles.push(createWaterParticle(phase, i, n));
@@ -87,28 +92,48 @@ function animateWaterPhase(phase) {
   requestAnimationFrame(waterAnimLoop);
 }
 
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function quadBezier(p0, p1, p2, t) {
+  const x = lerp(lerp(p0.x, p1.x, t), lerp(p1.x, p2.x, t), t);
+  const y = lerp(lerp(p0.y, p1.y, t), lerp(p1.y, p2.y, t), t);
+  return { x, y };
+}
+
 function createWaterParticle(phase, idx, total) {
   const c = document.getElementById('water-canvas');
   const W = c ? c.width : 700, H = c ? c.height : 380;
   const spread = (idx / total);
-  if (phase === 'evaporation') {
-    return { x: W * 0.05 + spread * W * 0.45, y: H * 0.72, vx: (Math.random() - 0.5) * 0.6, vy: -(0.8 + Math.random() * 0.6), alpha: 0.9, size: 4 + Math.random() * 3, phase };
-  } else if (phase === 'condensation') {
-    return { x: W * 0.35 + spread * W * 0.3, y: H * 0.10 + Math.random() * 0.08 * H, vx: (Math.random() - 0.5) * 0.4, vy: Math.random() * 0.3, alpha: 0.85, size: 3 + Math.random() * 4, phase };
-  } else if (phase === 'precipitation') {
-    return { x: W * 0.3 + spread * W * 0.35, y: H * 0.18 + Math.random() * 0.1 * H, vx: (Math.random() - 0.5) * 0.3, vy: 1.5 + Math.random() * 1, alpha: 0.9, size: 2 + Math.random() * 2, phase };
-  } else { // runoff
-    return { x: W * 0.55 + spread * W * 0.1, y: H * 0.52 + Math.random() * 0.05 * H, vx: 0.8 + Math.random() * 0.5, vy: 0.2 + Math.random() * 0.3, alpha: 0.9, size: 3 + Math.random() * 3, phase };
-  }
+  const baseSize = 3 + Math.random() * 2.5;
+  const speed = phase === 'precipitation' ? (0.55 + Math.random() * 0.35)
+    : phase === 'condensation' ? (0.20 + Math.random() * 0.12)
+      : (0.35 + Math.random() * 0.25);
+
+  // Mỗi giai đoạn: cho hạt chạy theo "đường đi" tương ứng để logic hơn
+  return {
+    t: Math.random(),
+    tOffset: spread,
+    speed,
+    alpha: 0.95,
+    size: baseSize,
+    phase,
+    x: W * 0.1,
+    y: H * 0.7,
+    wobble: Math.random() * Math.PI * 2
+  };
 }
 
-function waterAnimLoop() {
+function waterAnimLoop(ts) {
   if (!waterAnimRunning) return;
-  waterAnimT++;
+  if (waterLastTime == null) waterLastTime = ts;
+  const dt = clamp((ts - waterLastTime) / 1000, 0, 0.05);
+  waterLastTime = ts;
+  waterDt = dt;
+  waterAnimT += dt;
   drawWaterCycleScene(waterPhase, true);
 
   // Respawn particles
-  if (waterAnimT % 8 === 0 && waterPhase) {
+  if (waterPhase) {
     const dead = waterParticles.filter(p => p.alpha <= 0).length;
     for (let i = 0; i < dead; i++) {
       waterParticles.push(createWaterParticle(waterPhase, Math.random() * 18 | 0, 18));
@@ -221,24 +246,38 @@ function drawWaterCycleScene(activePhase, withParticles) {
   drawCloud(W * 0.35, H * 0.22, 22, 0.7, false);
   drawCloud(W * 0.56, H * 0.2, 24, cloudActive ? 0.9 : 0.5, cloudActive);
 
-  // ---- Phase arrows ----
-  function drawCurvedArrow(x1, y1, x2, y2, cpx, cpy, color, label, alpha) {
-    ctx.save(); ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-    ctx.shadowBlur = 8; ctx.shadowColor = color;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(cpx, cpy, x2, y2); ctx.stroke();
-    // Arrowhead
-    const dx = x2 - cpx, dy = y2 - cpy;
+  // ---- Phase arrows (đơn giản, ít hiệu ứng) ----
+  function drawSimpleArrow(p0, p1, p2, color, label, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
+    ctx.stroke();
+
+    // arrow head theo tiếp tuyến cuối đường
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
     const len = Math.hypot(dx, dy) || 1;
     const nx = dx / len, ny = dy / len;
-    ctx.fillStyle = color;
+    const head = 10;
     ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - nx * 12 + ny * 6, y2 - ny * 12 - nx * 6);
-    ctx.lineTo(x2 - nx * 12 - ny * 6, y2 - ny * 12 + nx * 6);
-    ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
-    ctx.fillStyle = color; ctx.font = 'bold 11px Nunito,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(label, (x1 + x2) / 2 + (cpx - (x1 + x2) / 2) * 0.3, (y1 + y2) / 2 + (cpy - (y1 + y2) / 2) * 0.3 - 8);
+    ctx.moveTo(p2.x, p2.y);
+    ctx.lineTo(p2.x - nx * head + ny * (head * 0.6), p2.y - ny * head - nx * (head * 0.6));
+    ctx.lineTo(p2.x - nx * head - ny * (head * 0.6), p2.y - ny * head + nx * (head * 0.6));
+    ctx.closePath();
+    ctx.fill();
+
+    // label đơn giản
+    ctx.font = '800 11px Nunito,sans-serif';
+    ctx.textAlign = 'center';
+    const mx = (p0.x + p2.x) / 2 + (p1.x - (p0.x + p2.x) / 2) * 0.25;
+    const my = (p0.y + p2.y) / 2 + (p1.y - (p0.y + p2.y) / 2) * 0.25 - 8;
+    ctx.fillText(label, mx, my);
     ctx.restore();
   }
 
@@ -249,26 +288,72 @@ function drawWaterCycleScene(activePhase, withParticles) {
     runoff: { al: activePhase === 'runoff' ? 1 : 0.4, color: '#00b894' }
   };
 
-  drawCurvedArrow(W * 0.13, H * 0.64, W * 0.38, H * 0.24, W * 0.02, H * 0.36, phases.evaporation.color, 'Bốc hơi ☀️', phases.evaporation.al);
-  drawCurvedArrow(W * 0.36, H * 0.22, W * 0.46, H * 0.12, W * 0.40, H * 0.08, phases.condensation.color, 'Ngưng tụ ☁️', phases.condensation.al);
-  drawCurvedArrow(W * 0.50, H * 0.18, W * 0.60, H * 0.46, W * 0.56, H * 0.28, phases.precipitation.color, 'Mưa 🌧️', phases.precipitation.al);
-  drawCurvedArrow(W * 0.58, H * 0.56, W * 0.22, H * 0.68, W * 0.42, H * 0.72, phases.runoff.color, 'Dòng chảy 🏞️', phases.runoff.al);
+  // các điểm chính (đồng bộ với hướng di chuyển của hạt)
+  const evapP0 = { x: W * 0.14, y: H * 0.67 };
+  const evapP1 = { x: W * 0.18, y: H * 0.44 };
+  const evapP2 = { x: W * 0.44, y: H * 0.20 };
+
+  const condP0 = { x: W * 0.44, y: H * 0.20 };
+  const condP1 = { x: W * 0.48, y: H * 0.12 };
+  const condP2 = { x: W * 0.54, y: H * 0.18 };
+
+  const rainP0 = { x: W * 0.52, y: H * 0.20 };
+  const rainP1 = { x: W * 0.58, y: H * 0.30 };
+  const rainP2 = { x: W * 0.62, y: H * 0.52 };
+
+  const runP0 = { x: W * 0.62, y: H * 0.52 };
+  const runP1 = { x: W * 0.46, y: H * 0.62 };
+  const runP2 = { x: W * 0.20, y: H * 0.68 };
+
+  drawSimpleArrow(evapP0, evapP1, evapP2, phases.evaporation.color, 'Bốc hơi', phases.evaporation.al);
+  drawSimpleArrow(condP0, condP1, condP2, phases.condensation.color, 'Ngưng tụ', phases.condensation.al);
+  drawSimpleArrow(rainP0, rainP1, rainP2, phases.precipitation.color, 'Mưa', phases.precipitation.al);
+  drawSimpleArrow(runP0, runP1, runP2, phases.runoff.color, 'Dòng chảy', phases.runoff.al);
 
   // ---- Particles ----
   if (withParticles && waterParticles.length) {
     waterParticles.forEach(p => {
+      // cập nhật vị trí theo giai đoạn
+      const k = clamp(waterDt * 60, 0, 2); // quy đổi về "đơn vị frame" ~60fps
+      p.t += p.speed * waterDt;
+      if (p.t > 1) { p.t = 0; p.alpha = 0.95; }
+
+      if (activePhase === 'evaporation') {
+        const t = clamp(p.t, 0, 1);
+        const pos = quadBezier(evapP0, evapP1, evapP2, t);
+        p.x = pos.x + Math.sin(waterAnimT * 3 + p.wobble) * 6;
+        p.y = pos.y + Math.cos(waterAnimT * 2 + p.wobble) * 4;
+        p.alpha -= 0.006 * k;
+      } else if (activePhase === 'condensation') {
+        // lượn nhẹ trong vùng mây
+        const cx = W * 0.47, cy = H * 0.18;
+        const r = 26 + (p.tOffset * 10);
+        p.x = cx + Math.cos(waterAnimT * 1.6 + p.wobble) * r * 0.6;
+        p.y = cy + Math.sin(waterAnimT * 1.4 + p.wobble) * r * 0.35;
+        p.alpha -= 0.003 * k;
+      } else if (activePhase === 'precipitation') {
+        const t = clamp(p.t, 0, 1);
+        const pos = quadBezier(rainP0, rainP1, rainP2, t);
+        p.x = pos.x + (Math.random() - 0.5) * 3;
+        p.y = pos.y + t * 8; // rơi nhanh hơn về cuối
+        p.alpha -= 0.010 * k;
+      } else if (activePhase === 'runoff') {
+        const t = clamp(p.t, 0, 1);
+        const pos = quadBezier(runP0, runP1, runP2, t);
+        p.x = pos.x + Math.sin(waterAnimT * 2.2 + p.wobble) * 3;
+        p.y = pos.y + Math.cos(waterAnimT * 1.8 + p.wobble) * 2;
+        p.alpha -= 0.006 * k;
+      }
+
       ctx.save();
       ctx.globalAlpha = p.alpha;
       ctx.fillStyle = activePhase === 'evaporation' ? '#ffe082'
         : activePhase === 'condensation' ? '#b0c4de'
           : activePhase === 'precipitation' ? '#74b9ff'
             : '#00cec9';
-      ctx.shadowBlur = 6; ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 4; ctx.shadowColor = ctx.fillStyle;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
-      p.x += p.vx; p.y += p.vy;
-      p.alpha -= 0.008;
-      if (activePhase === 'evaporation') p.size *= 0.997;
     });
     waterParticles = waterParticles.filter(p => p.alpha > 0);
   }
@@ -279,4 +364,3 @@ function drawWaterCycleScene(activePhase, withParticles) {
   ctx.fillText('⛰️ Núi cao', W * 0.63, H * 0.68);
   ctx.fillText('🌳 Rừng cây', W * 0.85, H * 0.78);
 }
-

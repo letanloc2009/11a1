@@ -16,11 +16,37 @@ const EL_F = 96485;     // C/mol e-
 const EL_M_CU = 63.546; // g/mol
 const EL_N = 2;         // Cu2+ + 2e -> Cu
 
+let elResizeBound = false;
+function ensureELCanvasSize() {
+  if (!elCanvas || !elCanvas.parentElement) return;
+  const wrap = elCanvas.parentElement;
+  const cssW = Math.max(280, wrap.clientWidth || 700);
+  const cssH = Math.max(240, Math.round(cssW * (300 / 700)));
+  elCanvas.style.height = cssH + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  const newW = Math.round(cssW * dpr);
+  const newH = Math.round(cssH * dpr);
+  if (elCanvas.width !== newW || elCanvas.height !== newH) {
+    elCanvas.width = newW;
+    elCanvas.height = newH;
+    // reset ion positions after resize
+    elIons = createELIons(Math.max(36, elIons.length || 44));
+  }
+}
+
 function initElectrolysis() {
   if (elCanvas) return;
   elCanvas = document.getElementById('el-canvas');
   if (!elCanvas) return;
   elCtx = elCanvas.getContext('2d');
+  ensureELCanvasSize();
+  if (!elResizeBound) {
+    elResizeBound = true;
+    window.addEventListener('resize', () => {
+      ensureELCanvasSize();
+      elDraw();
+    }, { passive: true });
+  }
   updateELParams();
   resetElectrolysis();
 }
@@ -84,6 +110,7 @@ function elLoop(ts) {
   if (!elRunning) return;
   const dtReal = Math.min(0.04, Math.max(0.001, (ts - elLastTs) / 1000));
   elLastTs = ts;
+  ensureELCanvasSize();
   updateELParams();
 
   const dt = dtReal * elSpeed;
@@ -102,6 +129,7 @@ function elLoop(ts) {
 
 function elStepIons(dtReal) {
   if (!elCanvas) return;
+  ensureELCanvasSize();
   const W = elCanvas.width, H = elCanvas.height;
 
   // vùng dung dịch
@@ -144,6 +172,7 @@ function elUpdateUI() {
 
 function elDraw() {
   if (!elCtx) return;
+  ensureELCanvasSize();
   const W = elCanvas.width, H = elCanvas.height;
   elCtx.clearRect(0, 0, W, H);
 
@@ -154,7 +183,8 @@ function elDraw() {
   elCtx.strokeStyle = 'rgba(124,185,255,0.6)';
   elCtx.fillStyle = 'rgba(79,195,247,0.10)';
   elCtx.beginPath();
-  elCtx.roundRect(bx, by, bw, bh, 16);
+  if (elCtx.roundRect) elCtx.roundRect(bx, by, bw, bh, 16);
+  else elCtx.rect(bx, by, bw, bh);
   elCtx.fill();
   elCtx.stroke();
   elCtx.restore();
@@ -189,8 +219,10 @@ function elDraw() {
     elCtx.save();
     elCtx.globalAlpha = 0.85;
     elCtx.fillStyle = ion.color;
+    elCtx.shadowBlur = 10;
+    elCtx.shadowColor = ion.color;
     elCtx.beginPath();
-    elCtx.arc(ion.x, ion.y, 4, 0, Math.PI * 2);
+    elCtx.arc(ion.x, ion.y, ion.r || 4, 0, Math.PI * 2);
     elCtx.fill();
     elCtx.restore();
   }
@@ -199,8 +231,10 @@ function elDraw() {
   elCtx.save();
   elCtx.font = "12px 'Space Mono', monospace";
   elCtx.fillStyle = 'rgba(255,255,255,0.85)';
+  elCtx.textAlign = 'left';
   elCtx.fillText('Catot (–): Cu²⁺ + 2e⁻ → Cu', bx + 15, by - 14);
-  elCtx.fillText('Anot (+): minh họa', bx + 15, by + bh + 22);
+  elCtx.textAlign = 'center';
+  elCtx.fillText('Anot (+): minh họa', anodeX, by - 14);
   elCtx.restore();
 }
 
@@ -216,6 +250,7 @@ function createELIons(n) {
       vx: -10 + Math.random() * 10,
       vy: -10 + Math.random() * 20,
       phase: Math.random() * Math.PI * 2,
+      r: 3 + Math.random() * 2,
       color: 'rgba(255, 138, 101, 0.95)' // Cu2+
     });
   }
