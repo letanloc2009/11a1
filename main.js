@@ -23,9 +23,9 @@ function showPage(id) {
   
   // Định nghĩa nhãn hiển thị tương ứng với ID trang
   const labels = {
-    home: 'Trang chủ', motion: 'Chuyển động thẳng', force: 'Lực – Kéo co',
+    home: 'Trang chủ', motion: 'Chuyển động thẳng', force: 'Lực',
     wave: 'Sóng cơ học', optics: 'Sóng ánh sáng', circuit: 'Mạch điện',
-    acidbase: 'Acid – Base', periodic: 'Bảng tuần hoàn',
+    acidbase: 'Phản ứng hóa học', periodic: 'Bảng tuần hoàn',
     reactionrate: 'Tốc độ phản ứng', electrolysis: 'Điện phân',
     dna: 'Lắp ráp DNA', cell: 'Tế bào', photosynthesis: 'Quang hợp',
     enzyme: 'Enzyme', mitosis: 'Nguyên phân',
